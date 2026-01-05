@@ -1,7 +1,6 @@
 """
 NCBI E-utilities client with HTTP and CLI backend support.
 """
-
 import os
 import subprocess
 import xml.etree.ElementTree as ET
@@ -16,30 +15,30 @@ from ..models.reference import Reference, Author, Journal
 
 
 class NCBIBackend(ABC):
-    """Abstract base class for NCBI backend implementations."""
+    """Abstract base class for NCBI backends."""
     
     @abstractmethod
     def search_by_doi(self, doi: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Search for PMID by DOI."""
+        """Search PubMed by DOI, return PMID if found."""
         pass
     
     @abstractmethod
     def fetch_xml(self, pmid: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Fetch XML data for a PMID."""
+        """Fetch XML data for a given PMID."""
         pass
 
 
 class HTTPBackend(NCBIBackend):
-    """HTTP-based backend using NCBI E-utilities web API."""
+    """HTTP-based backend using requests library."""
     
-    BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
     
     def __init__(self):
         self.session = requests.Session()
     
     def search_by_doi(self, doi: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Search PubMed by DOI using HTTP API."""
-        url = f"{self.BASE_URL}/esearch.fcgi"
+        """Search using HTTP API."""
+        url = f'{self.BASE_URL}/esearch.fcgi'
         params = {
             'db': 'pubmed',
             'term': f'{doi}[DOI]',
@@ -59,12 +58,12 @@ class HTTPBackend(NCBIBackend):
             return id_list[0] if id_list else None
             
         except requests.RequestException as e:
-            print(f"  ERROR: HTTP search failed: {e}")
+            print(f'  ERROR: HTTP search failed: {e}')
             return None
     
     def fetch_xml(self, pmid: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Fetch XML data using HTTP API."""
-        url = f"{self.BASE_URL}/efetch.fcgi"
+        """Fetch XML using HTTP API."""
+        url = f'{self.BASE_URL}/efetch.fcgi'
         params = {
             'db': 'pubmed',
             'id': pmid,
@@ -81,26 +80,26 @@ class HTTPBackend(NCBIBackend):
             return response.text
             
         except requests.RequestException as e:
-            print(f"  ERROR: HTTP fetch failed: {e}")
+            print(f'  ERROR: HTTP fetch failed: {e}')
             return None
 
 
 class CLIBackend(NCBIBackend):
-    """CLI-based backend using local E-utilities commands."""
+    """CLI-based backend using E-utilities command-line tools."""
     
     def __init__(self):
-        """Initialize and verify CLI tools are available."""
+        """Initialize CLI backend and verify tools.""" 
         self._ensure_tools_in_path()
         self._verify_tools()
     
     def _ensure_tools_in_path(self):
-        """Ensure edirect tools are in PATH."""
-        edirect_path = Path.home() / "edirect"
+        """Ensure E-utilities CLI tools are in PATH."""
+        edirect_path = Path.home() / 'edirect'
         if edirect_path.exists():
             current_path = os.environ.get('PATH', '')
             edirect_str = str(edirect_path)
             if edirect_str not in current_path:
-                os.environ['PATH'] = f"{edirect_str}:{current_path}"
+                os.environ['PATH'] = f'{edirect_str}:{current_path}'
     
     def _verify_tools(self):
         """Verify required CLI tools are available."""
@@ -110,12 +109,12 @@ class CLIBackend(NCBIBackend):
         
         if missing:
             raise RuntimeError(
-                f"CLI backend requires E-utilities tools. Missing: {', '.join(missing)}\n"
-                f"Install from: ftp://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/"
+                f'CLI backend requires E-utilities tools. Missing: {', '.join(missing)}\n'
+                f'Install from: ftp://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/'
             )
     
     def search_by_doi(self, doi: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Search using esearch CLI tool."""
+        """Search using CLI tools."""
         cmd = [
             'esearch',
             '-db', 'pubmed',
@@ -150,16 +149,16 @@ class CLIBackend(NCBIBackend):
             return pmid if pmid else None
             
         except subprocess.CalledProcessError as e:
-            print(f"  ERROR: CLI search failed: {e}")
+            print(f'  ERROR: CLI search failed: {e}')
             if e.stderr:
-                print(f"  stderr: {e.stderr}")
+                print(f'  stderr: {e.stderr}')
             return None
         except Exception as e:
-            print(f"  ERROR: {e}")
+            print(f'  ERROR: {e}')
             return None
     
     def fetch_xml(self, pmid: str, email: str, api_key: Optional[str] = None) -> Optional[str]:
-        """Fetch XML using efetch CLI tool."""
+        """Fetch XML using CLI tools."""
         cmd = [
             'efetch',
             '-db', 'pubmed',
@@ -180,18 +179,18 @@ class CLIBackend(NCBIBackend):
             
             # Check for CLI tool errors
             if xml_content.startswith('Unable to locate'):
-                print(f"  ERROR: Missing CLI tool component")
+                print(f'  ERROR: Missing CLI tool component')
                 return None
             
             return xml_content if xml_content else None
             
         except subprocess.CalledProcessError as e:
-            print(f"  ERROR: CLI fetch failed: {e}")
+            print(f'  ERROR: CLI fetch failed: {e}')
             return None
 
 
 class NCBIClient:
-    """NCBI E-utilities client with pluggable backend support."""
+    """NCBI E-utilities client with HTTP and CLI backend support."""
     
     def __init__(
         self,
@@ -199,9 +198,10 @@ class NCBIClient:
         api_key: Optional[str] = None,
         use_cli: bool = False
     ):
-        """Initialize NCBI client.
+        """
+        Initialize NCBI client
         
-        Args:
+        args:
             email: Email address (required by NCBI)
             api_key: Optional API key for higher rate limits
             use_cli: If True, use CLI tools; if False (default), use HTTP API
@@ -213,34 +213,34 @@ class NCBIClient:
         if use_cli:
             try:
                 self.backend = CLIBackend()
-                print("  Using CLI backend")
+                print('  Using CLI backend')
             except RuntimeError as e:
-                print(f"  WARNING: {e}")
-                print("  Falling back to HTTP backend")
+                print(f'  WARNING: {e}')
+                print('  Falling back to HTTP backend')
                 self.backend = HTTPBackend()
         else:
             self.backend = HTTPBackend()
     
     def search_by_doi(self, doi: str) -> Optional[str]:
-        """Search PubMed by DOI, return PMID.
+        '''Search PubMed by DOI, return PMID.
         
         Args:
             doi: Document Object Identifier
             
         Returns:
             PMID string if found, None otherwise
-        """
+        '''
         return self.backend.search_by_doi(doi, self.email, self.api_key)
     
     def fetch_reference(self, pmid: str) -> Optional[Reference]:
-        """Fetch full reference data by PMID.
+        '''Fetch full reference data by PMID.
         
         Args:
             pmid: PubMed ID
             
         Returns:
             Reference object if successful, None otherwise
-        """
+        '''
         xml_string = self.backend.fetch_xml(pmid, self.email, self.api_key)
         
         if not xml_string:
@@ -249,37 +249,38 @@ class NCBIClient:
         return self._parse_pubmed_xml(xml_string)
     
     def _parse_pubmed_xml(self, xml_string: str) -> Optional[Reference]:
-        """Parse PubMed XML to Reference model.
+        """
+        Parse PubMed XML to Reference model.
         
-        Args:
+        args:
             xml_string: XML response from NCBI
             
-        Returns:
+        returns:
             Reference object if parsing successful, None otherwise
         """
         try:
             root = ET.fromstring(xml_string)
         except ET.ParseError as e:
-            print(f"  ERROR: XML parse error: {e}")
+            print(f'  ERROR: XML parse error: {e}')
             return None
         
         article = root.find('.//PubmedArticle')
         
         if article is None:
-            print(f"  ERROR: No PubmedArticle found in XML")
+            print(f'  ERROR: No PubmedArticle found in XML')
             return None
         
         # Extract PMID
         pmid_elem = article.find('.//PMID')
-        pmid = pmid_elem.text if pmid_elem is not None else ""
+        pmid = pmid_elem.text if pmid_elem is not None else ''
         
         # Extract DOI
-        doi_elem = article.find('.//ArticleId[@IdType="doi"]')
-        doi = doi_elem.text if doi_elem is not None else ""
+        doi_elem = article.find(".//ArticleId[@IdType='doi']")
+        doi = doi_elem.text if doi_elem is not None else ''
         
         # Extract title
         title_elem = article.find('.//ArticleTitle')
-        title = title_elem.text if title_elem is not None else "No title"
+        title = title_elem.text if title_elem is not None else 'No title'
         
         # Extract authors
         authors = []
@@ -298,7 +299,7 @@ class NCBIClient:
         
         # Extract journal info
         journal_elem = article.find('.//Journal')
-        journal_title = "Unknown"
+        journal_title = 'Unknown'
         journal_abbr = None
         volume = None
         issue = None
@@ -368,7 +369,7 @@ class NCBIClient:
     
     @staticmethod
     def _month_to_int(month_str: str) -> int:
-        """Convert month name to integer."""
+        """Convert month abbreviation to integer."""
         months = {
             'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
             'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8,
