@@ -1,0 +1,5 @@
+# config.yaml - Use CLI by default
+ncbi_email: nberry11@gmail.com
+ncbi_use_cli: false
+database_path: data/elib.db
+target_directory: examples/output
