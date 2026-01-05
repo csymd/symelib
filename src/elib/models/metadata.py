@@ -2,9 +2,9 @@
 src/elib/models/metadata.py
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Literal
 from pathlib import Path
-
+from enum import Enum
 from pydantic import BaseModel, Field
 
 # ========================================================= #
@@ -33,15 +33,34 @@ class DocumentMetadata(BaseModel):
     class Config:
         from_attributes = True
 
+
+class SortBy(str, Enum):
+    relevance = 'relevance'
+    year = 'year'
+    title = 'title'
+    added_date = 'added_date'
+
+
+class SortOrder(str, Enum):
+    asc = 'asc'
+    desc = 'desc'
+
+
 class SearchQuery(BaseModel):
-    """Search parameters for querying the library"""
     text: Optional[str] = None
     author: Optional[str] = None
     year_from: Optional[int] = None
     year_to: Optional[int] = None
     keywords: List[str] = Field(default_factory=list)
+    doi: Optional[str] = None
+    pmid: Optional[str] = None
+    journal: Optional[str] = None
+    sort_by: SortBy = SortBy.relevance
+    sort_order: SortOrder = SortOrder.desc
     limit: int = Field(default=50, ge=1, le=1000)
     offset: int = Field(default=0, ge=0)
+
+
 
 class SearchResult(BaseModel):
     """Search result entry"""

@@ -2,16 +2,19 @@
 src/elib/services/file_manager.py
 """
 import shutil
-
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-from .pdf_processor import PDFProcessor
-from .ncbi_client import NCBIClient
-from .db_manager import DatabaseManager
+from elib.services.pdf_processor import PDFProcessor
+from elib.services.ncbi_client import NCBIClient
+from elib.services.db_manager import DatabaseManager
 
-from ..models.document import PDFDocument, ProcessedDocument
-from ..models.reference import Reference
+from elib.models.document import PDFDocument, ProcessedDocument
+from elib.models.reference import Reference
+
+from elib.utils.logging import get_shared_logger
+
+logger = get_shared_logger(name="file_manager")
 
 # ========================================================= #
 # File Manager Service                                      #

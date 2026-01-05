@@ -2,17 +2,20 @@
 NCBI E-utilities client with HTTP and CLI backend support.
 """
 import os
+import requests
 import subprocess
 import xml.etree.ElementTree as ET
+
 from abc import ABC, abstractmethod
 from typing import Optional
 from datetime import datetime
 from pathlib import Path
 
-import requests
+from elib.models.reference import Reference, Author, Journal
 
-from ..models.reference import Reference, Author, Journal
-
+# ========================================================= #
+# NCBI E-utilities Client                                   #
+# ========================================================= #
 
 class NCBIBackend(ABC):
     """Abstract base class for NCBI backends."""
