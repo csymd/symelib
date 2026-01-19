@@ -16,7 +16,7 @@ from elib.utils.config import Config
 from elib.utils.logging import get_shared_logger
 
 # ========================================================= #
-# Command-Line Interface (CLI) for elib                      #
+# Command-Line Interface (CLI) for elib                     #
 # ========================================================= #
 
 @click.group()
@@ -131,7 +131,8 @@ def process(ctx, source_dir, target_dir, use_cli):
 @click.pass_context
 def search(ctx, text, author, year_from, year_to, journal, doi, pmid,
            keywords, sort_by, sort_order, limit, offset, source, as_json):
-    """Search your local library and/or PubMed.
+    """
+    Search your local library and/or PubMed.
     
     Examples:
     

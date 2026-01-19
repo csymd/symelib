@@ -2,9 +2,9 @@
 src/elib/models/metadata.py
 """
 from datetime import datetime
-from typing import Optional, List, Literal
-from pathlib import Path
 from enum import Enum
+from typing import Optional, List
+
 from pydantic import BaseModel, Field
 
 # ========================================================= #
@@ -19,11 +19,11 @@ class DocumentMetadata(BaseModel):
     doi: str
     pmid: Optional[str] = None
     title: str
-    authors_json: str  # JSON string of authors list
+    authors_json: str
     journal: str
     publication_year: Optional[int] = None
     abstract: Optional[str] = None
-    keywords_json: str = "[]"  # JSON string of keywords
+    keywords_json: str = '[]'
     file_size: int
     added_date: datetime = Field(default_factory=datetime.now)
     last_accessed: Optional[datetime] = None
