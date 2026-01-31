@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import List, Optional
 from contextlib import contextmanager
 
+from elib.utils.logging import LoggerConfig, get_shared_logger
+from elib.models.reference import Reference
 from elib.models.metadata import (
     DocumentMetadata,
     SearchQuery,
@@ -15,10 +17,9 @@ from elib.models.metadata import (
     SortBy,
     SortOrder,
 )
-from elib.models.reference import Reference
-from elib.utils.logging import get_shared_logger
 
-logger = get_shared_logger(name="db_manager")
+# === Initialize Logger ===
+logger = get_shared_logger(LoggerConfig(name="db_manager"))
 
 # ========================================================= #
 # Database Manager Service                                  #

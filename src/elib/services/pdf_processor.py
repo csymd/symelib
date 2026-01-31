@@ -7,10 +7,11 @@ from typing import Optional, List
 
 import PyPDF2
 
+from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.models.document import PDFDocument, DOI
-from elib.utils.logging import get_shared_logger
 
-logger = get_shared_logger(name='pdf_processor')
+# === Initialize Logger ===
+logger = get_shared_logger(LoggerConfig(name='pdf_processor'))
 
 # ========================================================= #
 # PDF Processing Service                                    #

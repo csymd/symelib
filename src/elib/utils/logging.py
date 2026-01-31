@@ -9,6 +9,7 @@ import json
 from enum import Enum
 from typing import Any, Optional
 from pydantic import BaseModel, Field
+from typer.models import OptionInfo
 
 from elib.utils.config import Config
 
@@ -64,7 +65,7 @@ class eLibLogger:
         if not self._should_log(level):
             return
         log_entry = {
-            'level': level,
+            'level': level.value,
             'message': message,
             'service': self.service,
         }
@@ -86,6 +87,14 @@ class eLibLogger:
     def critical(self, message: str, **kwargs: Any) -> None:
         self._emit('CRITICAL', message, **kwargs)
 
+    def exception(self, message: str, exc: Exception, **kwargs: Any) -> None:
+        """Log an exception with traceback."""
+        import traceback
+        kwargs['exception_type'] = type(exc).__name__
+        kwargs['exception_message'] = str(exc)
+        kwargs['traceback'] = traceback.format_exc()
+        self._emit('ERROR', message, **kwargs)
+
 
 def initialize_logger(
         verbose: int,
@@ -106,32 +115,36 @@ def initialize_logger(
     # Load Config
     config = Config.load()
 
+    # Protect against OptionInfo being passed in from CLI and crashing Pydantic
+    if isinstance(log_level, OptionInfo):
+        log_level = None
+
     # Determine log level
     if log_level is not None:
-        level = log_level.value  # Convert Enum to string
+        level = log_level
     elif quiet:
-        level = LogLevel.ERROR.value
+        level = LogLevel.ERROR
     elif verbose >= 3:
-        level = LogLevel.DEBUG.value
+        level = LogLevel.DEBUG
     elif verbose == 2:
-        level = LogLevel.DEBUG.value
+        level = LogLevel.DEBUG
     elif verbose == 1:
-        level = LogLevel.INFO.value
+        level = LogLevel.INFO
     elif os.getenv('LOG_LEVEL'):
         level = os.getenv('LOG_LEVEL').upper()
     elif os.getenv('LOG_ENV'):
         env_to_level = {
-            'PROD': LogLevel.ERROR.value,
-            'STAGING': LogLevel.WARNING.value,
-            'DEV': LogLevel.DEBUG.value,
-            'TEST': LogLevel.INFO.value,
+            'PROD': LogLevel.ERROR,
+            'STAGING': LogLevel.WARNING,
+            'DEV': LogLevel.DEBUG,
+            'TEST': LogLevel.INFO,
         }
-        level = env_to_level.get(os.getenv('LOG_ENV', '').upper(), LogLevel.INFO.value)
+        level = env_to_level.get(os.getenv('LOG_ENV', '').upper(), LogLevel.INFO)
     else:
-        level = LogLevel.INFO.value
+        level = LogLevel.INFO
 
     # Logger Configuration and initialization
-    logger_config = LoggerConfig(level=log_level)
+    logger_config = LoggerConfig(level=level)
     logger = get_shared_logger(config=logger_config)
     logger.debug('CLI initialized', log_level=level, verbose_count=verbose, quiet=quiet, explicit_log_level=log_level)
 
@@ -159,12 +172,3 @@ def get_shared_logger(config: LoggerConfig) -> eLibLogger:
         _logger_instance.env = config.env
         _logger_instance.level = config.level
     return _logger_instance
-
-
-def exception(self, message: str, exc: Exception, **kwargs: Any) -> None:
-    """Log an exception with traceback."""
-    import traceback
-    kwargs['exception_type'] = type(exc).__name__
-    kwargs['exception_message'] = str(exc)
-    kwargs['traceback'] = traceback.format_exc()
-    self._emit('ERROR', message, **kwargs)

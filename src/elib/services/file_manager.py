@@ -5,16 +5,15 @@ import shutil
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from elib.services.pdf_processor import PDFProcessor
-from elib.services.ncbi_client import NCBIClient
-from elib.services.db_manager import DatabaseManager
-
+from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.models.document import PDFDocument, ProcessedDocument
-from elib.models.reference import Reference
+# from elib.models.reference import Reference
+from elib.services.db_manager import DatabaseManager
+from elib.services.ncbi_client import NCBIClient
+from elib.services.pdf_processor import PDFProcessor
 
-from elib.utils.logging import get_shared_logger
-
-logger = get_shared_logger(name="file_manager")
+# === Initialize Logger ===
+logger = get_shared_logger(LoggerConfig(name="db_manager"))
 
 # ========================================================= #
 # File Manager Service                                      #

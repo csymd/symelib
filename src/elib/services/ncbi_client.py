@@ -11,7 +11,11 @@ from typing import Optional
 from datetime import datetime
 from pathlib import Path
 
+from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.models.reference import Reference, Author, Journal
+
+# === Initialize Logger ===
+logger = get_shared_logger(LoggerConfig(name="ncbi_client"))
 
 # ========================================================= #
 # NCBI E-utilities Client                                   #

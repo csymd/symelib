@@ -7,10 +7,11 @@ from datetime import datetime
 
 import requests
 
+from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.models.reference import Reference, Author, Journal
-from elib.utils.logging import get_shared_logger
 
-logger = get_shared_logger(name="pubmed_search")
+# === Initialize Logger ===
+logger = get_shared_logger(LoggerConfig(name="pubmed_search"))
 
 # ========================================================= #
 # PubMed Search Service                                     #
