@@ -13,9 +13,6 @@ from elib.services.db_manager import DatabaseManager
 # elib <rebuild-index> command                              #
 # ========================================================= #
 
-app = typer.Typer(help='Commands for rebuilding the full-text search index')
-
-@app.command()
 def rebuild_index(ctx):
     """Rebuild the full-text search index."""
     config = ctx.obj['config']

@@ -16,9 +16,7 @@ from elib.services.pdf_processor import PDFProcessor
 # ========================================================= #
 # elib <process> command                                    #
 # ========================================================= #
-app = typer.Typer(help='Commands for processing PDFs')
 
-@app.command()
 def process(
         source_dir: Path = typer.Argument(..., exists=True, help='Directory containing PDFs to process'),
         target_dir: Path = typer.Option(None, help='Target directory for processed files'),

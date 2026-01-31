@@ -13,6 +13,7 @@ from pathlib import Path
 
 from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.models.reference import Reference, Author, Journal
+from elib.services.search_pubmed import PubMedSearchService
 
 # === Initialize Logger ===
 logger = get_shared_logger(LoggerConfig(name="ncbi_client"))
@@ -229,25 +230,27 @@ class NCBIClient:
             self.backend = HTTPBackend()
     
     def search_by_doi(self, doi: str) -> Optional[str]:
-        '''Search PubMed by DOI, return PMID.
+        """
+        Search PubMed by DOI, return PMID.
         
         Args:
             doi: Document Object Identifier
             
         Returns:
             PMID string if found, None otherwise
-        '''
+        """
         return self.backend.search_by_doi(doi, self.email, self.api_key)
     
     def fetch_reference(self, pmid: str) -> Optional[Reference]:
-        '''Fetch full reference data by PMID.
+        """
+        Fetch full reference data by PMID.
         
         Args:
             pmid: PubMed ID
             
         Returns:
             Reference object if successful, None otherwise
-        '''
+        """
         xml_string = self.backend.fetch_xml(pmid, self.email, self.api_key)
         
         if not xml_string:
@@ -255,14 +258,54 @@ class NCBIClient:
         
         return self._parse_pubmed_xml(xml_string)
     
+    def fetch_references(self, pmids: list[str]):
+        """
+        Fetch full Reference objects for a list of PMIDs.
+
+        Args:
+            pmids: List of PubMed IDs
+
+        Returns:
+            List of Reference objects
+        """
+        result = []
+        for pmid in pmids:
+            ref = self.fetch_reference(pmid)
+            if ref:
+                result.append(ref)
+        return result
+    
+    def search_pubmed(self, query: str, max_results: int = 20,
+                      year_from: int | None = None,
+                      year_to: int | None = None):
+        """
+        Search PubMed and return a list of PMIDs.
+
+        Args:
+            query: Search terms
+            max_results: Maximum number of results
+            year_from: Filter by publication year (from)
+            year_to: Filter by publication year (to)
+
+        Returns:
+            List of PMIDs
+        """
+        service = PubMedSearchService(email=self.email, api_key=self.api_key)
+        return service.search(
+            query=query,
+            max_results=max_results,
+            year_from=year_from,
+            year_to=year_to,
+        )
+
     def _parse_pubmed_xml(self, xml_string: str) -> Optional[Reference]:
         """
         Parse PubMed XML to Reference model.
         
-        args:
+        Args:
             xml_string: XML response from NCBI
             
-        returns:
+        Returns:
             Reference object if parsing successful, None otherwise
         """
         try:

@@ -52,7 +52,8 @@ test = [
 ]
 
 [project.scripts]
-elib = "elib.main:main"
+elib = "elib.main:runner"
+
 
 [project.urls]
 Homepage = "https://github.com/ntberry/elib"

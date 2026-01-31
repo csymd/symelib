@@ -18,6 +18,7 @@ from elib.utils.config import Config
 # ================================================== #
 
 class LogLevel(str, Enum):
+    OFF = 'OFF'
     DEBUG = 'DEBUG'
     INFO = 'INFO'
     WARNING = 'WARNING'
@@ -52,15 +53,13 @@ class eLibLogger:
         self.level = config.level
         self.level_order = [log_level.value for log_level in LogLevel]
 
-    def _should_log(self, level: str) -> bool:
+    def _should_log(self, level: LogLevel) -> bool:
         """Check if the log level is high enough to log."""
-        try:
-            result = self.level_order.index(level) >= self.level_order.index(self.level)
-            return result
-        except ValueError:
+        if self.level == LogLevel.OFF:
             return False
+        return self.level_order.index(level.value) >= self.level_order.index(self.level.value)
 
-    def _emit(self, level: str, message: str, **kwargs: Any) -> None:
+    def _emit(self, level: LogLevel, message: str, **kwargs: Any) -> None:
         """Emit a log message as a JSON object."""
         if not self._should_log(level):
             return
@@ -69,23 +68,23 @@ class eLibLogger:
             'message': message,
             'service': self.service,
         }
-        log_entry.update(kwargs)  # Add extra fields
+        log_entry.update(kwargs)
         print(json.dumps(log_entry), flush=True)
 
     def debug(self, message: str, **kwargs: Any) -> None:
-        self._emit('DEBUG', message, **kwargs)
+        self._emit(LogLevel.DEBUG, message, **kwargs)
 
     def info(self, message: str, **kwargs: Any) -> None:
-        self._emit('INFO', message, **kwargs)
+        self._emit(LogLevel.INFO, message, **kwargs)
 
     def warning(self, message: str, **kwargs: Any) -> None:
-        self._emit('WARNING', message, **kwargs)
+        self._emit(LogLevel.WARNING, message, **kwargs)
 
     def error(self, message: str, **kwargs: Any) -> None:
-        self._emit('ERROR', message, **kwargs)
+        self._emit(LogLevel.ERROR, message, **kwargs)
 
     def critical(self, message: str, **kwargs: Any) -> None:
-        self._emit('CRITICAL', message, **kwargs)
+        self._emit(LogLevel.CRITICAL, message, **kwargs)
 
     def exception(self, message: str, exc: Exception, **kwargs: Any) -> None:
         """Log an exception with traceback."""
@@ -93,7 +92,7 @@ class eLibLogger:
         kwargs['exception_type'] = type(exc).__name__
         kwargs['exception_message'] = str(exc)
         kwargs['traceback'] = traceback.format_exc()
-        self._emit('ERROR', message, **kwargs)
+        self._emit(LogLevel.ERROR, message, **kwargs)
 
 
 def initialize_logger(

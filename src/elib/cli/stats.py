@@ -13,12 +13,9 @@ from elib.services.db_manager import DatabaseManager
 # elib <stats> command                             #
 # ================================================= #
 
-app = typer.Typer(help='Commands for showing library statistics')
-
-@app.command()
 def stats(
-        ctx: typer.Context = typer.Option(None, hidden=True),
-    ):
+    ctx: typer.Context = typer.Option(None, hidden=True),
+):
     """Show library statistics"""
     config = ctx.obj['config']
     db_manager = DatabaseManager(config.database_path)
@@ -37,6 +34,6 @@ def stats(
     
     typer.echo(f"Total documents: {total}")
     typer.echo(f"Synced to S3: {synced}")
-    typer.echo(f"\nDocuments by year:")
+    typer.echo("\nDocuments by year:")
     for row in years:
         typer.echo(f"  {row['publication_year']}: {row['count']}")
