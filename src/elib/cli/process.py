@@ -16,6 +16,7 @@ from elib.services.pdf_processor import PDFProcessor
 # ========================================================= #
 # elib <process> command                                    #
 # ========================================================= #
+app = typer.Typer(help='Commands for processing PDFs')
 
 @app.command()
 def process(

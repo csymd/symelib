@@ -6,47 +6,73 @@ The elib <search> command implementation, with access to local and PubMed databa
 from __future__ import annotations
 
 import typer
-from pathlib import Path
+from enum import Enum
 
 from elib.models.metadata import SearchQuery
 from elib.services.db_manager import DatabaseManager
 from elib.services.ncbi_client import NCBIClient
-from elib.services.file_manager import FileManager
-from elib.services.pdf_processor import PDFProcessor
+# from elib.services.file_manager import FileManager
+# from elib.services.pdf_processor import PDFProcessor
+
+# ========================================================= #
+# Enums and Constants                                    #
+# ======================================================== #
+
+class SortBy(str, Enum):
+    RELEVANCE = 'relevance'
+    YEAR = 'year'
+    TITLE = 'title'
+    ADDED_DATE = 'added_date'
+
+class SortOrder(str, Enum):
+    ASC = 'asc'
+    DESC = 'desc'
+
+class SearchSource(str, Enum):
+    LOCAL = 'local'
+    PUBMED = 'pubmed'
+    BOTH = 'both'
+
+class ExportFormat(str, Enum):
+    JSON = 'json'
+    CSV = 'csv'
+    XML = 'xml'
 
 # ========================================================= #
 # elib <search> command                                     #
 # ========================================================= #
 
+app = typer.Typer(help='Commands for searching the library and PubMed')
+
 @app.command()
 def search(
         text: str = typer.Option(
             None,
-            description='Full-text serach (title, abstract, keywords)'
+            help='Full-text serach (title, abstract, keywords)'
         ),
         author: str = typer.Option(
             None,
-            description='Filter by author name.'
+            help='Filter by author name.'
         ),
         year_from: int = typer.Option(
             None,
-            description='Filter by publication year (start).'
+            help='Filter by publication year (start).'
         ),
         year_to: int = typer.Option(
             None,
-            description='Filter by publication year (end).'
+            help='Filter by publication year (end).'
         ),
         journal: str = typer.Option(
             None,
-            description='Filter by journal.'
+            help='Filter by journal.'
         ),
         doi: str = typer.Option(
             None,
-            description='Filter by DOI.'
+            help='Filter by DOI.'
         ),
         pmid: str = typer.Option(
             None,
-            description='Filter by PMID.'
+            help='Filter by PMID.'
         ),
         keywords: list[str] = typer.Option(
             None,
@@ -54,18 +80,12 @@ def search(
            help='Add keyword filter.'
         ),
         sort_by: str = typer.Option(
-            'relevance',
-           help='Sort results by specific field.',
-           case_sensitive=False,
-           show_choices=True,
-           choices=['relevance', 'year', 'title', 'added_date'],
+            SortBy.RELEVANCE,
+            help='Sort results by specific field.',
         ),
         sort_order: str = typer.Option(
-            'desc',
+            SortOrder.DESC,
             help='Sort order for results.',
-            case_sensitive=False,
-            show_choices=True,
-            choices=['asc', 'desc'],
         ),
         limit: int = typer.Option(
             20,
@@ -78,15 +98,16 @@ def search(
             show_default=True,
         ),
         source: str = typer.Option(
-            'local',
+            SearchSource.BOTH,
             help='Search source: local, PubMed, or both.',
-            case_sensitive=False,
-            show_choices=True,
-            choices=['local', 'pubmed', 'both']
         ),
         export_format: str = typer.Option(
-            None,
-            description=''
+            ExportFormat.JSON,
+            help='Export format for results.',
+        ),
+        as_json: bool = typer.Option(
+            True,
+            help='Output results in JSON format.'
         ),
     ):
     """
@@ -111,7 +132,7 @@ def search(
     pubmed_results = []
 
     # === Search Local Library ===
-   if source in ['local', 'both']:
+    if source in ['local', 'both']:
         db_manager = DatabaseManager(config.database_path)
 
         query = SearchQuery(

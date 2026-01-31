@@ -9,7 +9,7 @@ version = "0.1.0"
 description = "Electronic Library Management System for PDF documents with DOI extraction and NCBI integration"
 readme = "README.md"
 authors = [
-    { name = "nate berry", email = "nberry11@gmail.com" }
+    { name = "ntberry", email = "nberry11@gmail.com" }
 ]
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
@@ -52,7 +52,7 @@ test = [
 ]
 
 [project.scripts]
-elib = "elib.cli:cli"
+elib = "elib.main:main"
 
 [project.urls]
 Homepage = "https://github.com/ntberry/elib"

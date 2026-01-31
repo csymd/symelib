@@ -3,8 +3,12 @@ src/elib/main.py
 
 The entry point for the elib CLI application.
 """
+from __future__ import annotations
+
 import typer
-from elib.utils.logging import initialize_logger
+from typing import Optional
+
+from elib.utils.logging import initialize_logger, LogLevel
 from elib.cli.process import app as process_app
 from elib.cli.search import app as search_app
 from elib.cli.stats import app as stats_app
@@ -22,16 +26,18 @@ app.add_typer(rebuild_index_app, name='rebuild-index')
 def main(
         verbose: int = typer.Option(0, '--verbose', '-v', help='Increase verbosity'),
         quiet: bool = typer.Option(False, '--quiet', '-q', help='Quiet mode'),
-        log_level: str = typer.Option(None, '--log-level', help='Set log level',
-                                    case_sensitive=False,
-                                    show_choices=True,
-                                    choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
+        log_level: Optional[LogLevel] = typer.Option(None, '--log-level', help='Set log level'),
+        ctx: typer.Context = typer.Context,
     ):
     """
     Main entry point for the CLI application.
     """
-    config, logger = initialize_logger(verbose, quiet, log_level)
-    typer.Context.obj = {'config': config, 'logger': logger}
+    # Set default log level if not provided
+    log_level = log_level if log_level else LogLevel.INFO
+    # Initialize logger and config
+    config, logger = initialize_logger(verbose=verbose, quiet=quiet, log_level=log_level)
+    ctx.obj = {'config': config, 'logger': logger}
+    # typer.Context.obj = {'config': config, 'logger': logger}
 
     
 if __name__ == '__main__':
