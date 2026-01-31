@@ -5,7 +5,11 @@ from __future__ import annotations
 
 import os
 import json
+import typer
+
+from elib.utils.config import Config
 from typing import Any, Optional
+
 
 # ================================================== #
 # Simple Logger                                      #
@@ -71,41 +75,84 @@ class eLibLogger:
 # ================================================= #
 # Allows all loggers to be created in a standard way and linked together
 
-def initialize_logger(name: str, env: Optional[str] = None) -> eLibLogger:
-    """
-    Create and return a eLibLogger instance with the specified name and level.
+# def initialize_logger(name: str, env: Optional[str] = None) -> eLibLogger:
+#     """
+#     Create and return a eLibLogger instance with the specified name and level.
 
-    args:
-        name (str): The name of the logger (e.g., the module or file name).
-        env (Optional[str]): The environment string ('PROD', 'DEV', etc.). If None, fetch from LOG_ENV.
+#     args:
+#         name (str): The name of the logger (e.g., the module or file name).
+#         env (Optional[str]): The environment string ('PROD', 'DEV', etc.). If None, fetch from LOG_ENV.
 
-    returns:
-        eLibLogger: A configured eLibLogger instance.
-    """
-    global _logger_instance
+#     returns:
+#         eLibLogger: A configured eLibLogger instance.
+#     """
+#     global _logger_instance
 
-    # Determine the environment
-    if env is None:
-        env = os.getenv('LOG_ENV', 'DEV')  # Default to 'DEV'
+#     # Determine the environment
+#     if env is None:
+#         env = os.getenv('LOG_ENV', 'DEV')  # Default to 'DEV'
 
-    # Map environment to logging levels
-    env_to_level = {
-        'PROD': 'ERROR',
-        'STAGING': 'WARNING',
-        'DEV': 'DEBUG',
-        'TEST': 'INFO'
-    }
-    level = env_to_level.get(env.upper(), 'DEBUG')  # Default to 'DEBUG' if env is unrecognized
+#     # Map environment to logging levels
+#     env_to_level = {
+#         'PROD': 'ERROR',
+#         'STAGING': 'WARNING',
+#         'DEV': 'DEBUG',
+#         'TEST': 'INFO'
+#     }
+#     level = env_to_level.get(env.upper(), 'DEBUG')  # Default to 'DEBUG' if env is unrecognized
 
-    # Initialize or update the logger instance
-    if _logger_instance is None:
-        print(f'Creating new logger: name={name}, env={env}')
-        _logger_instance = eLibLogger(name=name, level=level)
+#     # Initialize or update the logger instance
+#     if _logger_instance is None:
+#         print(f'Creating new logger: name={name}, env={env}')
+#         _logger_instance = eLibLogger(name=name, level=level)
+#     else:
+#         print(f'Updating logger level to: {level}')
+#         _logger_instance.level = level
+
+#     return _logger_instance
+
+def initialize_logger(
+        verbose: int = typer.Option(0, '--verbose', '-v', help='Increase verbosity'),
+        quiet: bool = typer.Option(False, '--quiet', '-q', help='Quiet mode'),
+        log_level: str = typer.Option(None, '--log-level', help='Set log level',
+                                      case_sensitive=False,
+                                      show_choices=True,
+                                      choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
+    ) -> tuple[Config, eLibLogger]:
+    '''Initialize the logger and configuration.'''
+    # Load Config
+    config = Config.load()
+
+    # Determine log level
+    if log_level:
+        level = log_level.upper()
+    elif quiet:
+        level = 'ERROR'
+    elif verbose >= 3:
+        level = 'DEBUG'
+    elif verbose == 2:
+        level = 'DEBUG'
+    elif verbose == 1:
+        level = 'INFO'
+    elif os.getenv('LOG_LEVEL'):
+        level = os.getenv('LOG_LEVEL').upper()
+    elif os.getenv('LOG_ENV'):
+        env_to_level = {
+            'PROD': 'ERROR',
+            'STAGING': 'WARNING',
+            'DEV': 'DEBUG',
+            'TEST': 'INFO',
+        }
+        level = env_to_level.get(os.getenv('LOG_ENV', '').upper(), 'INFO')
     else:
-        print(f'Updating logger level to: {level}')
-        _logger_instance.level = level
+        level = 'INFO'
 
-    return _logger_instance
+    # Initialize Logger
+    logger = get_shared_logger(name='elib', level=level)
+    logger.level = level
+    logger.debug('CLI initialized', log_level=level, verbose_count=verbose, quiet=quiet, explicit_log_level=log_level)
+
+    return config, logger
 
 
 def get_shared_logger(name: str = 'eLibApp', level: str = 'INFO') -> eLibLogger:
