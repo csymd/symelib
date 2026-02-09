@@ -6,14 +6,12 @@ The entry point for the elib CLI application.
 from __future__ import annotations
 
 import typer
-from typing import Optional
 
-from elib.cli.stats import stats
-from elib.cli.search import search
 from elib.cli.process import process
 from elib.cli.rebuild_index import rebuild_index
-
-from elib.utils.logging import initialize_logger, LogLevel
+from elib.cli.search import search
+from elib.cli.stats import stats
+from elib.utils.logging import LogLevel, initialize_logger
 
 # ========================================================= #
 # elib CLI Application                                      #
@@ -29,13 +27,13 @@ app.command(name='rebuild-index')(rebuild_index)
 # ========================================================= #
 # Global CLI Options                                        #
 # ========================================================= #
-# 
+#
 @app.callback()
 def main(
     ctx: typer.Context,
     verbose: int = typer.Option(0, "--verbose", "-v", help="Increase verbosity"),
     quiet: bool = typer.Option(True, "--quiet", "-q", help="Quiet mode"),
-    log_level: Optional[LogLevel] = typer.Option(None, "--log-level", help="Set log level"),
+    log_level: LogLevel | None = typer.Option(None, "--log-level", help="Set log level"),
 ):
     """
     Global CLI options (verbosity, quiet, log level).

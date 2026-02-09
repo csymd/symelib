@@ -19,7 +19,7 @@ def stats(
     """Show library statistics"""
     config = ctx.obj['config']
     db_manager = DatabaseManager(config.database_path)
-    
+
     with db_manager.get_connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
         synced = conn.execute("SELECT COUNT(*) FROM documents WHERE s3_synced = 1").fetchone()[0]
@@ -31,7 +31,7 @@ def stats(
             ORDER BY publication_year DESC
             LIMIT 10
         """).fetchall()
-    
+
     typer.echo(f"Total documents: {total}")
     typer.echo(f"Synced to S3: {synced}")
     typer.echo("\nDocuments by year:")

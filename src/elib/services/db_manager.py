@@ -1,15 +1,11 @@
 """
 elib/services/db_manager.py
 """
+from contextlib import contextmanager
 import json
+from pathlib import Path
 import sqlite3
 
-from pathlib import Path
-from typing import List, Optional
-from contextlib import contextmanager
-
-from elib.utils.logging import LoggerConfig, get_shared_logger
-from elib.models.reference import Reference
 from elib.models.metadata import (
     DocumentMetadata,
     SearchQuery,
@@ -17,6 +13,8 @@ from elib.models.metadata import (
     SortBy,
     SortOrder,
 )
+from elib.models.reference import Reference
+from elib.utils.logging import LoggerConfig, get_shared_logger
 
 # === Initialize Logger ===
 logger = get_shared_logger(LoggerConfig(name="db_manager"))
@@ -27,11 +25,11 @@ logger = get_shared_logger(LoggerConfig(name="db_manager"))
 
 class DatabaseManager:
     """Manages the SQLite database for document metadata"""
-    
+
     def __init__(self, db_path: Path):
         self.db_path = db_path
         self.init_database()
-    
+
     def init_database(self):
         """Initialize database and create tables if they don't exist"""
         with self.get_connection() as conn:
@@ -55,13 +53,13 @@ class DatabaseManager:
                     s3_path TEXT
                 )
             ''')
-            
+
             # Create indexes
             conn.execute('CREATE INDEX IF NOT EXISTS idx_doi ON documents(doi)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_pmid ON documents(pmid)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_year ON documents(publication_year)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_filename ON documents(filename)')
-            
+
             # Full-text search virtual table
             conn.execute('''
                 CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
@@ -70,7 +68,7 @@ class DatabaseManager:
                     content_rowid=id
                 )
             ''')
-            
+
             # Triggers to keep FTS in sync
             conn.execute('''
                 CREATE TRIGGER IF NOT EXISTS documents_ai AFTER INSERT ON documents BEGIN
@@ -78,13 +76,13 @@ class DatabaseManager:
                     VALUES (new.id, new.title, new.authors_json, new.abstract, new.keywords_json);
                 END
             ''')
-            
+
             conn.execute('''
                 CREATE TRIGGER IF NOT EXISTS documents_ad AFTER DELETE ON documents BEGIN
                     DELETE FROM documents_fts WHERE rowid = old.id;
                 END
             ''')
-            
+
             conn.execute('''
                 CREATE TRIGGER IF NOT EXISTS documents_au AFTER UPDATE ON documents BEGIN
                     UPDATE documents_fts SET 
@@ -95,9 +93,9 @@ class DatabaseManager:
                     WHERE rowid = new.id;
                 END
             ''')
-            
+
             conn.commit()
-    
+
     @contextmanager
     def get_connection(self):
         '''Context manager for database connections'''
@@ -107,13 +105,13 @@ class DatabaseManager:
             yield conn
         finally:
             conn.close()
-    
-    def add_document(self, reference: Reference, file_path: Path, 
+
+    def add_document(self, reference: Reference, file_path: Path,
                      filename: str, file_size: int) -> int:
         '''Add document to database'''
         authors_json = json.dumps([a.dict() for a in reference.authors])
         keywords_json = json.dumps(reference.keywords + reference.mesh_terms)
-        
+
         metadata = DocumentMetadata(
             file_path=str(file_path),
             filename=filename,
@@ -127,7 +125,7 @@ class DatabaseManager:
             keywords_json=keywords_json,
             file_size=file_size
         )
-        
+
         with self.get_connection() as conn:
             cursor = conn.execute('''
                 INSERT INTO documents (
@@ -142,19 +140,19 @@ class DatabaseManager:
             ))
             conn.commit()
             return cursor.lastrowid
-    
-    def get_by_doi(self, doi: str) -> Optional[DocumentMetadata]:
+
+    def get_by_doi(self, doi: str) -> DocumentMetadata | None:
         """Get document metadata by DOI"""
         with self.get_connection() as conn:
             row = conn.execute(
                 'SELECT * FROM documents WHERE doi = ?', (doi,)
             ).fetchone()
-            
+
             if row:
                 return DocumentMetadata(**dict(row))
         return None
-    
-    def search(self, query: SearchQuery) -> List[SearchResult]:
+
+    def search(self, query: SearchQuery) -> list[SearchResult]:
         """Search documents with filters and FTS ranking."""
 
         params = []
@@ -182,7 +180,7 @@ class DatabaseManager:
             '''
             params.append(fts_query)
 
-            logger.debug('FTS query prepared', 
+            logger.debug('FTS query prepared',
                         original=query.text,
                         escaped=fts_query)
         else:
@@ -278,7 +276,7 @@ class DatabaseManager:
             raise
 
         return results
-    
+
     def update_s3_sync(self, doc_id: int, s3_path: str):
         """Update document record as synced to S3"""
         with self.get_connection() as conn:

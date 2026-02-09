@@ -5,12 +5,14 @@ The elib <search> command implementation, with access to local and PubMed databa
 """
 from __future__ import annotations
 
-import typer
 from enum import Enum
+
+import typer
 
 from elib.models.metadata import SearchQuery
 from elib.services.db_manager import DatabaseManager
 from elib.services.ncbi_client import NCBIClient
+
 # from elib.services.file_manager import FileManager
 # from elib.services.pdf_processor import PDFProcessor
 
@@ -106,7 +108,6 @@ def search(
     # === Serach PubMed ===
     if source in ['pubmed', 'both']:
         # local import for serach service (and avoiding circular dependency)
-        from elib.services.search_pubmed import PubMedSearchService
 
         if not text:
             typer.echo('Error: --text required for PubMed search')
@@ -151,10 +152,10 @@ def search(
 
 def _display_text_results(local_results, pubmed_results, source):
     """Display search results in text format."""
-    
+
     if source in ['local', 'both'] and local_results:
         typer.echo(f'\n=== Local Library ({len(local_results)} results) ===\n')
-        
+
         for i, r in enumerate(local_results, 1):
             m = r.metadata
             typer.echo(f'{i}. {m.title}')
@@ -163,31 +164,31 @@ def _display_text_results(local_results, pubmed_results, source):
             typer.echo(f"   DOI: {m.doi}  PMID: {m.pmid or '-'}")
             typer.echo(f'   📄 File: {m.filename}')
             typer.echo('')
-    
+
     if source in ['pubmed', 'both'] and pubmed_results:
         typer.echo(f"\n=== PubMed Results ({len(pubmed_results)} results) ===\n")
-        
+
         for i, item in enumerate(pubmed_results, 1):
             ref = item['reference']
             in_lib = item['in_library']
-            
+
             # Format authors
             author_str = ', '.join([a.last_name for a in ref.authors[:3]])
             if len(ref.authors) > 3:
                 author_str += ', et al.'
-            
+
             typer.echo(f'{i}. {ref.title}')
             typer.echo(f'   Authors: {author_str}')
             typer.echo(f'   Journal: {ref.journal.title} ({ref.publication_year()})')
             typer.echo(f'   DOI: {ref.doi}  PMID: {ref.pmid}')
-            
+
             if in_lib:
                 typer.echo('   ✓ Already in your library')
             else:
                 typer.echo('   + Not in library')
-            
+
             typer.echo('')
-    
+
     if not local_results and not pubmed_results:
         typer.echo('No results found.')
 
@@ -195,7 +196,7 @@ def _display_text_results(local_results, pubmed_results, source):
 def _display_json_results(local_results, pubmed_results, source):
     """Display search results in JSON format."""
     import json
-    
+
     output = {
         'source': source,
         'local_count': len(local_results),
@@ -203,7 +204,7 @@ def _display_json_results(local_results, pubmed_results, source):
         'local_results': [],
         'pubmed_results': []
     }
-    
+
     # Local results
     for r in local_results:
         m = r.metadata
@@ -218,7 +219,7 @@ def _display_json_results(local_results, pubmed_results, source):
             'file_path': m.file_path,
             'in_library': True
         })
-    
+
     # PubMed results
     for item in pubmed_results:
         ref = item['reference']
@@ -233,5 +234,5 @@ def _display_json_results(local_results, pubmed_results, source):
             'keywords': ref.keywords,
             'in_library': item['in_library']
         })
-    
+
     typer.echo(json.dumps(output, indent=2))

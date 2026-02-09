@@ -3,7 +3,6 @@ src/elib/models/metadata.py
 """
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -13,23 +12,23 @@ from pydantic import BaseModel, Field
 
 class DocumentMetadata(BaseModel):
     """Document metadata for database storage"""
-    id: Optional[int] = None
+    id: int | None = None
     file_path: str
     filename: str
     doi: str
-    pmid: Optional[str] = None
+    pmid: str | None = None
     title: str
     authors_json: str
     journal: str
-    publication_year: Optional[int] = None
-    abstract: Optional[str] = None
+    publication_year: int | None = None
+    abstract: str | None = None
     keywords_json: str = '[]'
     file_size: int
     added_date: datetime = Field(default_factory=datetime.now)
-    last_accessed: Optional[datetime] = None
+    last_accessed: datetime | None = None
     s3_synced: bool = False
-    s3_path: Optional[str] = None
-    
+    s3_path: str | None = None
+
     class Config:
         from_attributes = True
 
@@ -47,14 +46,14 @@ class SortOrder(str, Enum):
 
 
 class SearchQuery(BaseModel):
-    text: Optional[str] = None
-    author: Optional[str] = None
-    year_from: Optional[int] = None
-    year_to: Optional[int] = None
-    keywords: List[str] = Field(default_factory=list)
-    doi: Optional[str] = None
-    pmid: Optional[str] = None
-    journal: Optional[str] = None
+    text: str | None = None
+    author: str | None = None
+    year_from: int | None = None
+    year_to: int | None = None
+    keywords: list[str] = Field(default_factory=list)
+    doi: str | None = None
+    pmid: str | None = None
+    journal: str | None = None
     sort_by: SortBy = SortBy.relevance
     sort_order: SortOrder = SortOrder.desc
     limit: int = Field(default=50, ge=1, le=1000)

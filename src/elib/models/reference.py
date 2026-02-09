@@ -1,7 +1,6 @@
 """
 src/elib/models/reference.py
 """
-from typing import Optional, List
 from datetime import date
 
 from pydantic import BaseModel, Field
@@ -13,10 +12,10 @@ from pydantic import BaseModel, Field
 class Author(BaseModel):
     """Author information"""
     last_name: str
-    first_name: Optional[str] = None
-    initials: Optional[str] = None
-    affiliation: Optional[str] = None
-    
+    first_name: str | None = None
+    initials: str | None = None
+    affiliation: str | None = None
+
     def format_citation(self) -> str:
         """Format for citation: LastName FM"""
         if self.initials:
@@ -26,35 +25,35 @@ class Author(BaseModel):
 class Journal(BaseModel):
     """Journal information"""
     title: str
-    abbreviation: Optional[str] = None
-    issn: Optional[str] = None
-    volume: Optional[str] = None
-    issue: Optional[str] = None
-    
+    abbreviation: str | None = None
+    issn: str | None = None
+    volume: str | None = None
+    issue: str | None = None
+
 class Reference(BaseModel):
     """Complete reference metadata from NCBI"""
     pmid: str
     doi: str
     title: str
-    authors: List[Author] = Field(default_factory=list)
+    authors: list[Author] = Field(default_factory=list)
     journal: Journal
-    publication_date: Optional[date] = None
-    abstract: Optional[str] = None
-    keywords: List[str] = Field(default_factory=list)
-    mesh_terms: List[str] = Field(default_factory=list)
-    
+    publication_date: date | None = None
+    abstract: str | None = None
+    keywords: list[str] = Field(default_factory=list)
+    mesh_terms: list[str] = Field(default_factory=list)
+
     def first_author_lastname(self) -> str:
         """Get first author's last name for filename"""
         if self.authors:
             return self.authors[0].last_name
         return 'Unknown'
-    
+
     def publication_year(self) -> str:
         """Get publication year for filename"""
         if self.publication_date:
             return str(self.publication_date.year)
         return 'NODATE'
-    
+
     def generate_filename(self) -> str:
         """Generate standardized filename: FirstAuthor_Year_ShortTitle.pdf"""
         author = self.first_author_lastname()
@@ -65,5 +64,5 @@ class Reference(BaseModel):
         # Remove special characters
         short_title = ''.join(c for c in short_title if c.isalnum() or c in '_')
         short_title = short_title.replace(' ', '_')
-        
+
         return f'{author}_{year}_{short_title}.pdf'

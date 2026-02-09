@@ -2,16 +2,12 @@
 tests/unit/models/test_metadata.py
 """
 from datetime import datetime
+
 from pydantic import ValidationError
 import pytest
 
-from elib.models.metadata import (
-    DocumentMetadata,
-    SearchQuery,
-    SortBy,
-    SortOrder,
-    SearchResult
-)
+from elib.models.metadata import DocumentMetadata, SearchQuery, SearchResult, SortBy, SortOrder
+
 
 # Test for DocumentMetadata model
 def test_document_metadata_creation():

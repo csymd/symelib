@@ -5,12 +5,13 @@ The elib <process> command to process PDFs into the library.
 """
 from __future__ import annotations
 
-import typer
 from pathlib import Path
 
+import typer
+
 from elib.services.db_manager import DatabaseManager
-from elib.services.ncbi_client import NCBIClient
 from elib.services.file_manager import FileManager
+from elib.services.ncbi_client import NCBIClient
 from elib.services.pdf_processor import PDFProcessor
 
 # ========================================================= #

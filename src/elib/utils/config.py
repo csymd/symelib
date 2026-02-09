@@ -1,12 +1,10 @@
 """
 src/elib/utils/config.py
 """
-import yaml
-
 from pathlib import Path
-from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+import yaml
 
 # ========================================================= #
 # Application Configuration Model                           #
@@ -15,12 +13,12 @@ from pydantic import BaseModel, Field
 class Config(BaseModel):
     """Application configuration"""
     ncbi_email: str
-    ncbi_api_key: Optional[str] = None
+    ncbi_api_key: str | None = None
     database_path: Path = Path("data/elib.db")
     target_directory: Path = Path("~/Documents/elib").expanduser()
-    s3_bucket: Optional[str] = None
-    rclone_remote: Optional[str] = None
-    
+    s3_bucket: str | None = None
+    rclone_remote: str | None = None
+
     @classmethod
     def load(cls, config_path: Path = Path("config.yaml")) -> "Config":
         """Load configuration from YAML file"""
@@ -31,7 +29,7 @@ class Config(BaseModel):
         else:
             # Return default config
             return cls(ncbi_email="your.email@example.com")
-    
+
     def save(self, config_path: Path = Path("config.yaml")):
         """Save configuration to YAML file"""
         with open(config_path, 'w') as f:

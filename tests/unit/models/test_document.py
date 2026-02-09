@@ -1,15 +1,18 @@
 """
 tests/unit/models/test_document.py
 """
-import pytest
 from datetime import datetime
 from pathlib import Path
+
 from pydantic import ValidationError
+import pytest
+
 from elib.models.document import (
     DOI,
     PDFDocument,
     ProcessedDocument,
 )
+
 
 # Test for DOI model
 def test_doi_validation():

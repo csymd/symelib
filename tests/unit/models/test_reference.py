@@ -1,8 +1,8 @@
 """
 tests/unit/models/test_reference.py
 """
-import pytest
 from datetime import date
+
 from elib.models.reference import Author, Journal, Reference
 
 

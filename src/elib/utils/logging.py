@@ -3,11 +3,11 @@ src/elib/utils/logging.py
 """
 from __future__ import annotations
 
-import os
-import json
-
 from enum import Enum
-from typing import Any, Optional
+import json
+import os
+from typing import Any
+
 from pydantic import BaseModel, Field
 from typer.models import OptionInfo
 
@@ -31,16 +31,16 @@ class LogLevel(str, Enum):
 # ================================================== #
 
 class LoggerConfig(BaseModel):
-    name: Optional[str] = Field(default=None, description='Name of the logger')
-    service: Optional[str] = Field(default=None, description='Service name for the logger')
-    env: Optional[str] = Field(default=None, description='Environment (e.g., DEV, PROD)')
+    name: str | None = Field(default=None, description='Name of the logger')
+    service: str | None = Field(default=None, description='Service name for the logger')
+    env: str | None = Field(default=None, description='Environment (e.g., DEV, PROD)')
     level: LogLevel = Field(default=LogLevel.INFO, description='Log level')
 
 # ================================================== #
 # Simple Logger                                      #
 # ================================================== #
 
-_logger_instance: Optional[eLibLogger] = None
+_logger_instance: eLibLogger | None = None
 
 class eLibLogger:
     """
@@ -98,7 +98,7 @@ class eLibLogger:
 def initialize_logger(
         verbose: int,
         quiet: bool,
-        log_level: Optional[LogLevel] = None,
+        log_level: LogLevel | None = None,
     ) -> tuple[Config, eLibLogger]:
     """
     Initialize the logger and configuration.
@@ -123,9 +123,7 @@ def initialize_logger(
         level = log_level
     elif quiet:
         level = LogLevel.ERROR
-    elif verbose >= 3:
-        level = LogLevel.DEBUG
-    elif verbose == 2:
+    elif verbose >= 3 or verbose == 2:
         level = LogLevel.DEBUG
     elif verbose == 1:
         level = LogLevel.INFO
