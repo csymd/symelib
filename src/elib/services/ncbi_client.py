@@ -13,6 +13,7 @@ import requests
 from elib.models.reference import Author, Journal, Reference
 from elib.services.search_pubmed import PubMedSearchService
 from elib.utils.logging import LoggerConfig, get_shared_logger
+from elib.utils.rate_limiter import rate_limited_batch, simple_sleep
 
 # === Initialize Logger ===
 logger = get_shared_logger(LoggerConfig(name="ncbi_client"))
@@ -257,9 +258,10 @@ class NCBIClient:
 
         return self._parse_pubmed_xml(xml_string)
 
-    def fetch_references(self, pmids: list[str]):
+    @rate_limited_batch(batch_size=5, sleep_seconds=2.0)
+    def fetch_references(self, pmids: list[str]) -> list[Reference]:
         """
-        Fetch full Reference objects for a list of PMIDs.
+        Fetch full Reference objects for a list of PMIDs with rate limiting.
 
         Args:
             pmids: List of PubMed IDs
