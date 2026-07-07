@@ -1,6 +1,7 @@
 """
-src/elib/models/metadata.py
+Metadata handling
 """
+
 from datetime import datetime
 from enum import Enum
 
@@ -10,8 +11,10 @@ from pydantic import BaseModel, Field
 # Document Metadata Models                                  #
 # ========================================================= #
 
+
 class DocumentMetadata(BaseModel):
     """Document metadata for database storage"""
+
     id: int | None = None
     file_path: str
     filename: str
@@ -22,7 +25,7 @@ class DocumentMetadata(BaseModel):
     journal: str
     publication_year: int | None = None
     abstract: str | None = None
-    keywords_json: str = '[]'
+    keywords_json: str = "[]"
     file_size: int
     added_date: datetime = Field(default_factory=datetime.now)
     last_accessed: datetime | None = None
@@ -34,15 +37,15 @@ class DocumentMetadata(BaseModel):
 
 
 class SortBy(str, Enum):
-    relevance = 'relevance'
-    year = 'year'
-    title = 'title'
-    added_date = 'added_date'
+    relevance = "relevance"
+    year = "year"
+    title = "title"
+    added_date = "added_date"
 
 
 class SortOrder(str, Enum):
-    asc = 'asc'
-    desc = 'desc'
+    asc = "asc"
+    desc = "desc"
 
 
 class SearchQuery(BaseModel):
@@ -60,8 +63,8 @@ class SearchQuery(BaseModel):
     offset: int = Field(default=0, ge=0)
 
 
-
 class SearchResult(BaseModel):
     """Search result entry"""
+
     metadata: DocumentMetadata
     relevance_score: float = 0.0

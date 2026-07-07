@@ -3,15 +3,16 @@ src/elib/main.py
 
 The entry point for the elib CLI application.
 """
+
 from __future__ import annotations
 
 import typer
 
+from elib.cli.agent import agent
 from elib.cli.process import process
 from elib.cli.rebuild_index import rebuild_index
 from elib.cli.search import search
 from elib.cli.stats import stats
-from elib.cli.agent import agent
 from elib.utils.logging import LogLevel, initialize_logger
 
 # ========================================================= #
@@ -19,11 +20,11 @@ from elib.utils.logging import LogLevel, initialize_logger
 # ========================================================= #
 
 app = typer.Typer(help="elib - Electronic Library Management System")
-app.command(name='stats')(stats)
-app.command(name='search')(search)
-app.command(name='process')(process)
-app.command(name='rebuild-index')(rebuild_index)
-app.command(name='agent')(agent)
+app.command(name="stats")(stats)
+app.command(name="search")(search)
+app.command(name="process")(process)
+app.command(name="rebuild-index")(rebuild_index)
+app.command(name="agent")(agent)
 
 
 # ========================================================= #

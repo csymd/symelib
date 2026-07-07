@@ -1,0 +1,79 @@
+# compose.yml — Postgres + pgvector for elib agents/RAG features
+#
+# This is ONLY needed for the optional agents path (LlamaIndex + PGVector).
+# The core elib functionality (PDF processing, search, FTS) uses SQLite and
+# does not require this container.
+#
+# Usage (from repo root):
+#   make db-up     # starts the 'postgres' service
+#   make db-down
+#
+# Podman + Toolbox workflow (user context: full podman + toolbox rebuild performed):
+#
+# Recommended sequencing when doing development inside a toolbox/distobox container:
+#
+# 1. On the **host** (outside toolbox), start the DB:
+#      cd /path/to/elib
+#      make db-up
+#    (This ensures the Postgres container runs under the host's podman.)
+#
+# 2. Enter your toolbox.
+#
+# 3. Inside the toolbox (where your uv/Python/elib dev env lives):
+#      cd /path/to/elib
+#      uv sync --all-extras
+#      export DATABASE_URL="postgresql+psycopg://elib:elib@host.containers.internal:5432/elib"
+#      make db-migrate
+#      elib rebuild-index --embeddings
+#      elib agent "..."
+#
+# Why host.containers.internal?
+#   - Inside a toolbox, "localhost" resolves to the toolbox itself, not the host.
+#   - podman injects the special hostname `host.containers.internal` that points
+#     at the host (where the published port 5432 from this compose lives).
+#
+# If you want to run `make db-up` from *inside* the toolbox:
+#   - The podman socket is usually forwarded, so `podman compose` commands delegate
+#     to the host. The DB container will still appear on the host.
+#   - You still need the DATABASE_URL override above for any Python code (the app,
+#     alembic, etc.) running inside the toolbox.
+#
+# After a full podman system reset:
+#   - Images and the named volume `elib_pgdata` will be gone.
+#   - `make db-up` will pull fresh and re-initialize the DB.
+#
+# Connection (defaults):
+#   postgresql+psycopg://elib:elib@localhost:5432/elib
+#
+# Override via environment (strongly recommended inside toolbox):
+#   DATABASE_URL=postgresql+psycopg://elib:elib@host.containers.internal:5432/elib
+#
+# You can also override compose variables:
+#   POSTGRES_USER=... POSTGRES_PASSWORD=... POSTGRES_DB=... POSTGRES_PORT=5433 \
+#   podman compose -f compose.yml up -d postgres
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: elib-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elib}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elib}
+      POSTGRES_DB: ${POSTGRES_DB:-elib}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - elib_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elib} -d ${POSTGRES_DB:-elib}"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+volumes:
+  elib_pgdata:
+    # Named volume persists data across container restarts.
+    # After a full podman system reset this volume will be gone and the DB will
+    # be re-initialized on next `db-up`.

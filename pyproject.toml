@@ -1,27 +1,55 @@
-# Updated for Python 3.13 and LlamaIndex agents
 [project]
 name = "elib"
 version = "0.1.0"
 description = "Foundation for a local paper management system with agentic capabilities"
 requires-python = ">=3.13"
 
-[project.optional-dependencies]
-agents = [
-    "llama-index-core>=0.12.0",
-    "llama-index-vector-stores-postgres>=0.4.0",
-    "llama-index-llms-ollama>=0.5.0",
-    "llama-index-embeddings-huggingface>=0.5.0",
-    "llama-index-readers-file>=0.4.0",
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    "rich>=13.0",
+    "PyPDF2>=3.0",
 ]
 
+[project.optional-dependencies]
 db = [
     "sqlalchemy>=2.0",
     "alembic",
     "psycopg[binary]",
     "pgvector",
 ]
+agents = [
+    "llama-index-core>=0.12.0",
+    "llama-index-vector-stores-postgres>=0.4.0",
+    "llama-index-llms-ollama>=0.5.0",
+    "llama-index-embeddings-huggingface>=0.5.0",
+    "llama-index-readers-file>=0.4.0",
+    # Runtime requirements for Postgres + pgvector vector store (shared with [db])
+    "sqlalchemy>=2.0",
+    "psycopg[binary]",
+    "pgvector",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+elib = "elib.main:runner"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.uv]
-python = "3.13"
+python-preference = "only-managed"
 
-# Add other groups as needed
+[tool.ruff]
+# Configuration moved to ruff.toml

@@ -14,15 +14,12 @@ from elib.services.ncbi_client import NCBIClient
 def test_backend(use_cli: bool):
     """Test a specific backend."""
     backend_name = "CLI" if use_cli else "HTTP"
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Testing {backend_name} Backend")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     try:
-        client = NCBIClient(
-            email="nberry11@gmail.com",
-            use_cli=use_cli
-        )
+        client = NCBIClient(email="nberry11@gmail.com", use_cli=use_cli)
 
         # Test DOI
         test_doi = "10.3389/fphys.2021.627320"
@@ -46,6 +43,7 @@ def test_backend(use_cli: bool):
 
     except Exception as e:
         print(f"✗ Backend failed: {e}")
+
 
 if __name__ == "__main__":
     # Test HTTP backend

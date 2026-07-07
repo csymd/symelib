@@ -1,8 +1,7 @@
 """
-src/elib/cli/stats.py
-
 The elib <stats> command to show library statistics.
 """
+
 from __future__ import annotations
 
 import typer
@@ -13,11 +12,12 @@ from elib.services.db_manager import DatabaseManager
 # elib <stats> command                             #
 # ================================================= #
 
+
 def stats(
     ctx: typer.Context = typer.Option(None, hidden=True),
 ):
     """Show library statistics"""
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     db_manager = DatabaseManager(config.database_path)
 
     with db_manager.get_connection() as conn:

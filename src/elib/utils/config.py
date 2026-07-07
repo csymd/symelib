@@ -1,6 +1,7 @@
 """
 src/elib/utils/config.py
 """
+
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -10,8 +11,10 @@ import yaml
 # Application Configuration Model                           #
 # ========================================================= #
 
+
 class Config(BaseModel):
     """Application configuration"""
+
     ncbi_email: str
     ncbi_api_key: str | None = None
     database_path: Path = Path("data/elib.db")
@@ -32,5 +35,5 @@ class Config(BaseModel):
 
     def save(self, config_path: Path = Path("config.yaml")):
         """Save configuration to YAML file"""
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             yaml.dump(self.dict(), f)

@@ -1,6 +1,7 @@
 """
 src/elib/utils/logging.py
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -17,24 +18,27 @@ from elib.utils.config import Config
 # Log Level Enum                                     #
 # ================================================== #
 
+
 class LogLevel(str, Enum):
-    OFF = 'OFF'
-    DEBUG = 'DEBUG'
-    INFO = 'INFO'
-    WARNING = 'WARNING'
-    ERROR = 'ERROR'
-    CRITICAL = 'CRITICAL'
+    OFF = "OFF"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 # ================================================== #
 # LoggerConfig Model                                 #
 # ================================================== #
 
+
 class LoggerConfig(BaseModel):
-    name: str | None = Field(default=None, description='Name of the logger')
-    service: str | None = Field(default=None, description='Service name for the logger')
-    env: str | None = Field(default=None, description='Environment (e.g., DEV, PROD)')
-    level: LogLevel = Field(default=LogLevel.INFO, description='Log level')
+    name: str | None = Field(default=None, description="Name of the logger")
+    service: str | None = Field(default=None, description="Service name for the logger")
+    env: str | None = Field(default=None, description="Environment (e.g., DEV, PROD)")
+    level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
+
 
 # ================================================== #
 # Simple Logger                                      #
@@ -42,14 +46,16 @@ class LoggerConfig(BaseModel):
 
 _logger_instance: eLibLogger | None = None
 
+
 class eLibLogger:
     """
     A minimal JSON logger for structured logging.
     """
+
     def __init__(self, config: LoggerConfig):
-        self.name = config.name or os.getenv('ELIB_SERVICE_NAME', 'eLibApp')
-        self.service = config.service or os.getenv('ELIB_SERVICE_NAME', 'eLibApp')
-        self.env = config.env or os.getenv('LOG_ENV', 'DEV')
+        self.name = config.name or os.getenv("ELIB_SERVICE_NAME", "eLibApp")
+        self.service = config.service or os.getenv("ELIB_SERVICE_NAME", "eLibApp")
+        self.env = config.env or os.getenv("LOG_ENV", "DEV")
         self.level = config.level
         self.level_order = [log_level.value for log_level in LogLevel]
 
@@ -64,9 +70,9 @@ class eLibLogger:
         if not self._should_log(level):
             return
         log_entry = {
-            'level': level.value,
-            'message': message,
-            'service': self.service,
+            "level": level.value,
+            "message": message,
+            "service": self.service,
         }
         log_entry.update(kwargs)
         print(json.dumps(log_entry), flush=True)
@@ -89,17 +95,18 @@ class eLibLogger:
     def exception(self, message: str, exc: Exception, **kwargs: Any) -> None:
         """Log an exception with traceback."""
         import traceback
-        kwargs['exception_type'] = type(exc).__name__
-        kwargs['exception_message'] = str(exc)
-        kwargs['traceback'] = traceback.format_exc()
+
+        kwargs["exception_type"] = type(exc).__name__
+        kwargs["exception_message"] = str(exc)
+        kwargs["traceback"] = traceback.format_exc()
         self._emit(LogLevel.ERROR, message, **kwargs)
 
 
 def initialize_logger(
-        verbose: int,
-        quiet: bool,
-        log_level: LogLevel | None = None,
-    ) -> tuple[Config, eLibLogger]:
+    verbose: int,
+    quiet: bool,
+    log_level: LogLevel | None = None,
+) -> tuple[Config, eLibLogger]:
     """
     Initialize the logger and configuration.
 
@@ -127,23 +134,29 @@ def initialize_logger(
         level = LogLevel.DEBUG
     elif verbose == 1:
         level = LogLevel.INFO
-    elif os.getenv('LOG_LEVEL'):
-        level = os.getenv('LOG_LEVEL').upper()
-    elif os.getenv('LOG_ENV'):
+    elif os.getenv("LOG_LEVEL"):
+        level = os.getenv("LOG_LEVEL").upper()
+    elif os.getenv("LOG_ENV"):
         env_to_level = {
-            'PROD': LogLevel.ERROR,
-            'STAGING': LogLevel.WARNING,
-            'DEV': LogLevel.DEBUG,
-            'TEST': LogLevel.INFO,
+            "PROD": LogLevel.ERROR,
+            "STAGING": LogLevel.WARNING,
+            "DEV": LogLevel.DEBUG,
+            "TEST": LogLevel.INFO,
         }
-        level = env_to_level.get(os.getenv('LOG_ENV', '').upper(), LogLevel.INFO)
+        level = env_to_level.get(os.getenv("LOG_ENV", "").upper(), LogLevel.INFO)
     else:
         level = LogLevel.INFO
 
     # Logger Configuration and initialization
     logger_config = LoggerConfig(level=level)
     logger = get_shared_logger(config=logger_config)
-    logger.debug('CLI initialized', log_level=level, verbose_count=verbose, quiet=quiet, explicit_log_level=log_level)
+    logger.debug(
+        "CLI initialized",
+        log_level=level,
+        verbose_count=verbose,
+        quiet=quiet,
+        explicit_log_level=log_level,
+    )
 
     return config, logger
 
