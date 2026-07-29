@@ -82,7 +82,7 @@ def classify_metadata_status(
     title: str | None,
     authors_json: str | None,
     abstract: str | None,
-    source: MetadataSource | str | None = None,
+    source: MetadataSource | str | None = None,  # noqa: ARG001 — reserved for scoring
 ) -> MetadataStatus:
     """Heuristically classify metadata quality for backfill / post-fetch."""
     real_id = has_real_doi(doi) or has_real_pmid(pmid)

@@ -93,7 +93,7 @@ def search(
         elib search "heart rate" --source pubmed
     """
     config = ctx.obj["config"]
-    logger = ctx.obj["logger"]
+    _ = ctx.obj["logger"]
 
     # Initialize results
     local_results = []

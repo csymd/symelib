@@ -168,7 +168,7 @@ class DetailScreen(Screen):
         title = doc.title if doc else str(self.document_id)
         self.app.push_screen(AddToListModal(self.document_id, title))
 
-    def on_click(self, event) -> None:  # noqa: ANN001
+    def on_click(self, event) -> None:
         try:
             if getattr(event.widget, "id", None) == "detail-file":
                 self.action_open_pdf()

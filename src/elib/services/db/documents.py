@@ -4,7 +4,6 @@ SQLite persistence for elib (split package).
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from datetime import datetime
 import json
 from pathlib import Path
@@ -21,12 +20,10 @@ from elib.models.metadata import (
     SortBy,
     SortOrder,
     classify_metadata_status,
-    has_real_doi,
     is_synthetic_doi,
     is_synthetic_pmid,
     sort_sql_clause,
 )
-from elib.models.paper_list import PaperList, PaperListItem
 from elib.models.reference import Reference
 from elib.utils.logging import LoggerConfig, get_shared_logger
 from elib.utils.search_query import build_fts_match
@@ -43,8 +40,6 @@ _DOCUMENTS_EXTRA_COLUMNS: list[tuple[str, str]] = [
     ("source_path", "TEXT"),
     ("original_filename", "TEXT"),
 ]
-
-from elib.services.db.base import DatabaseBase
 
 
 class DocumentsMixin:

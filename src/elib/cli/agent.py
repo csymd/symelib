@@ -15,7 +15,7 @@ def agent(query: str):
         console.print("Run: uv sync --extra agents   (or uv sync --all-extras)")
         console.print("Also ensure: make db-up  (Postgres + pgvector) and Ollama is running.")
         console.print(f"Details: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     console.print(f"[bold]Querying papers:[/bold] {query}")
     try:
@@ -46,7 +46,7 @@ def agent(query: str):
         console.print(
             "You may also need to run `elib rebuild-index --embeddings` after ingesting papers."
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 if __name__ == "__main__":

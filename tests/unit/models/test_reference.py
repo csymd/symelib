@@ -122,4 +122,6 @@ def test_reference_generate_filename():
         journal=journal,
         publication_date=date(2023, 10, 15),
     )
-    expected_filename = "Smith_2023_An_example_of_a_reference_title.pdf"
+    # first five title words only
+    expected_filename = "Smith_2023_An_example_of_a_reference.pdf"
+    assert reference.generate_filename() == expected_filename

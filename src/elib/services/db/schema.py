@@ -5,35 +5,19 @@ SQLite persistence for elib (split package).
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
-import json
-from pathlib import Path
 import sqlite3
 
 from elib.models.metadata import (
-    DocumentMetadata,
-    MetadataIssue,
     MetadataSource,
-    MetadataStatus,
-    SearchField,
-    SearchQuery,
-    SearchResult,
-    SortBy,
-    SortOrder,
     classify_metadata_status,
     has_real_doi,
     is_synthetic_doi,
     is_synthetic_pmid,
-    sort_sql_clause,
 )
-from elib.models.paper_list import PaperList, PaperListItem
-from elib.models.reference import Reference
+from elib.services.db.base import _DOCUMENTS_EXTRA_COLUMNS
 from elib.utils.logging import LoggerConfig, get_shared_logger
 
 logger = get_shared_logger(LoggerConfig(name="db_manager"))
-
-
-from elib.services.db.base import _DOCUMENTS_EXTRA_COLUMNS, DatabaseBase
 
 
 class SchemaMixin:

@@ -461,6 +461,7 @@ class LibraryScreen(Screen):
             pass
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        _ = event
         self.action_open_detail()
 
     def action_add_to_list(self) -> None:
@@ -544,6 +545,7 @@ class AddToListModal(ModalScreen[None]):
             self.notify("Failed to add", severity="error")
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        _ = event
         self.action_confirm()
 
 

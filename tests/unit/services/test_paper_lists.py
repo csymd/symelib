@@ -56,7 +56,7 @@ def test_create_and_list_paper_lists(db: DatabaseManager):
 def test_add_remove_show(db: DatabaseManager, tmp_path: Path):
     db.create_paper_list("ms-draft")
     id1 = _add_doc(db, tmp_path, 1)
-    id2 = _add_doc(db, tmp_path, 2)
+    _add_doc(db, tmp_path, 2)
 
     item = db.add_to_list(list_name="ms-draft", document_id=id1, notes="key ref")
     assert item is not None

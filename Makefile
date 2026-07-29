@@ -1,4 +1,4 @@
-.PHONY: help setup install install-cli sync test lint format check clean db-up db-down db-migrate rebuild pre-commit-install pre-commit-run
+.PHONY: help setup setup-agents install install-cli sync test lint format check clean db-up db-down db-migrate rebuild pre-commit-install pre-commit-run
 
 help:
 	@echo "Available commands for elib:"
@@ -91,5 +91,6 @@ clean:
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@echo "Clean completed."
 
-setup: sync db-up db-migrate rebuild
-	@echo "Project setup complete!"
+# Full agents stack (optional; not for day-to-day SQLite use)
+setup-agents: sync db-up db-migrate rebuild
+	@echo "Agents stack setup complete (Postgres + migrate + rebuild)!"

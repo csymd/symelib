@@ -166,6 +166,7 @@ class ListsScreen(Screen):
         self.app.push_screen(ListDetailScreen(name))
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        _ = event
         self.action_open_list()
 
     def action_new_list(self) -> None:
@@ -531,6 +532,7 @@ class ListDetailScreen(Screen):
         self.app.push_screen(DetailScreen(doc_id))
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        _ = event
         self.action_open_detail()
 
     def action_export(self) -> None:

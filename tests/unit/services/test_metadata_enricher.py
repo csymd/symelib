@@ -6,8 +6,6 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from elib.models.metadata import MetadataSource, MetadataStatus
 from elib.models.reference import Author, Journal, Reference
 from elib.services.db_manager import DatabaseManager

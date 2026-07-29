@@ -184,6 +184,8 @@ class CLIBackend(NCBIBackend):
 
     def fetch_xml(self, pmid: str, email: str, api_key: str | None = None) -> str | None:
         """Fetch XML using CLI tools."""
+        # email/api_key kept for NCBIBackend interface parity (efetch uses edirect config)
+        _ = (email, api_key)
         cmd = ["efetch", "-db", "pubmed", "-id", pmid, "-format", "xml"]
 
         try:

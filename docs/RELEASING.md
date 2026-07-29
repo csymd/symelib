@@ -182,15 +182,15 @@ SymWorx splits **day-to-day CI** vs **release gates**. For elib (no Actions requ
 
 | Workflow | Trigger | Checks |
 |----------|---------|--------|
-| `ci.yml` (later) | PR / push `develop`, `staging`, `main` | `ruff format --check`, `ruff check` (scoped), `pytest` |
+| `ci.yml` | PR / push `develop`, `main`, `stage`/`staging`, `release/**` | `ruff format --check`, `ruff check`, `pytest` |
 | `release.yml` (later) | PR → `main`, `release/**`, tags `v*` | Version ↔ tag/branch match; changelog section; full test matrix |
 
 **Publish jobs stay disabled** until you want PyPI / automated GitHub Releases.
 
-Local equivalent until then:
+Local equivalent:
 
 ```bash
-make check
+make check   # ruff check + format --check + pytest
 ```
 
 ---

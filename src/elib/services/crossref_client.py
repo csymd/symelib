@@ -123,7 +123,7 @@ class CrossrefClient:
         params = {"mailto": self.mailto}
         throttle = crossref_throttle()
         try:
-            for attempt in range(5):
+            for _attempt in range(5):
                 throttle.wait()
                 response = self.session.get(url, params=params, timeout=30)
                 if response.status_code == 429:

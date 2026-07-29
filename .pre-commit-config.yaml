@@ -1,16 +1,10 @@
-# Local git hooks only (no GitHub Actions yet).
-#
-# Install once per clone:
+# Local git hooks (mirrors CI ruff jobs). Install once:
 #   make pre-commit-install
 #
 # Run on everything:
 #   make pre-commit-run
 #
 # Skip one commit (rare):  git commit --no-verify
-#
-# Scope: formatting + import sort + light file hygiene.
-# Full lint (`make lint` / `make check`) is still the PR bar; the tree has
-# pre-existing Ruff findings that would block every commit if enforced here.
 
 default_language_version:
   python: python3.13
@@ -19,10 +13,8 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.16
     hooks:
-      # Import sorting (isort rules) — auto-fix, formatting-adjacent
       - id: ruff-check
-        args: [--fix, --select, I]
-      # Black-compatible formatter (uses ruff.toml [format])
+        args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
