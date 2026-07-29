@@ -1,6 +1,3 @@
-# Day-to-day CI for elib (SymWorx-style gates, Python edition).
-# Release/publish automation stays separate and optional (see docs/RELEASING.md).
-
 name: CI
 
 on:
