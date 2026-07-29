@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 - Target first tagged release after landing the refactor branch, security scrub sign-off, and smoke test on a clean clone.
-- Branching model: `develop` / `staging` / `main` with `release/vX.Y.Z` prep branches (see [docs/RELEASING.md](docs/RELEASING.md)).
+- Branching model: `develop` / `stage` / `main` with `release/vX.Y.Z` prep branches (see [docs/RELEASING.md](docs/RELEASING.md)).
 
 ---
 

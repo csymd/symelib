@@ -1,7 +1,7 @@
 # Releasing elib
 
 Release process for elib, aligned with the **SymWorx** branch model
-(`develop` → `staging` → `release/vX.Y.Z` → `main` + tag `vX.Y.Z`),
+(`develop` → `stage` → `release/vX.Y.Z` → `main` + tag `vX.Y.Z`),
 adapted for a **single Python package** (`pyproject.toml` version).
 
 See also: [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md) (security scrub before first public push).
@@ -13,20 +13,20 @@ See also: [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md) (security scrub before first pu
 | Branch | Purpose |
 |--------|---------|
 | `develop` | Day-to-day integration. Feature PRs land here. |
-| `staging` | Early-access / soak. Optional pre-releases (`0.1.0-beta.1`). |
+| `stage` | Early-access / soak. Optional pre-releases (`0.1.0-beta.1`). |
 | `release/vX.Y.Z` | Release prep only: version bump, changelog freeze, final fixes. |
 | `main` | Stable releases. Tagged `vX.Y.Z` from here. |
 
 ```text
-feature/* ──► develop ──► staging ──► release/vX.Y.Z ──► main
+feature/* ──► develop ──► stage ──► release/vX.Y.Z ──► main
                                               │
                                               └── tag vX.Y.Z
 ```
 
-**Pre-releases** (e.g. `v0.1.0-rc.1`) may be tagged from `staging` or a release branch.
+**Pre-releases** (e.g. `v0.1.0-rc.1`) may be tagged from `stage` or a release branch.
 **Final releases** are cut only after `release/vX.Y.Z` → `main` and tag `vX.Y.Z`.
 
-Until `main` / `staging` exist on the remote, you can still:
+Until `main` / `stage` exist on the remote, you can still:
 
 1. Land work on `develop` (or finish `grok/refactor` → merge to `develop`).
 2. Cut `release/v0.1.0` from the integration branch.
@@ -80,7 +80,7 @@ Release metadata checks (when CI is enabled) should assert:
 ### 0. Preflight (every release)
 
 ```bash
-# working tree clean; on up-to-date staging (or develop if staging not used yet)
+# working tree clean; on up-to-date stage (or develop if stage not used yet)
 git status
 make check                 # ruff format/lint checks + pytest
 make pre-commit-run        # optional full-tree hooks
@@ -92,7 +92,7 @@ Confirm secrets stay in `~/.config/elib/env` / `~/elibrary/config.yaml` only.
 ### 1. Open the release branch
 
 ```bash
-git checkout staging       # or develop if staging is not active yet
+git checkout stage       # or develop if stage is not active yet
 git pull
 git checkout -b release/vX.Y.Z
 ```
@@ -149,8 +149,8 @@ git push origin vX.Y.Z
 git checkout develop
 git merge main             # or merge release branch
 git push origin develop
-# if using staging:
-git checkout staging && git merge main && git push
+# if using stage:
+git checkout stage && git merge main && git push
 ```
 
 ### 7. After release
@@ -163,7 +163,7 @@ git checkout staging && git merge main && git push
 
 ## Pre-release procedure (optional)
 
-From `staging` (or `develop`):
+From `stage` (or `develop`):
 
 ```bash
 # e.g. 0.1.0-rc.1
@@ -182,7 +182,7 @@ SymWorx splits **day-to-day CI** vs **release gates**. For elib (no Actions requ
 
 | Workflow | Trigger | Checks |
 |----------|---------|--------|
-| `ci.yml` | PR / push `develop`, `main`, `stage`/`staging`, `release/**` | `ruff format --check`, `ruff check`, `pytest` |
+| `ci.yml` | PR / push `develop`, `main`, `stage`, `release/**` | `ruff format --check`, `ruff check`, `pytest` |
 | `release.yml` (later) | PR → `main`, `release/**`, tags `v*` | Version ↔ tag/branch match; changelog section; full test matrix |
 
 **Publish jobs stay disabled** until you want PyPI / automated GitHub Releases.
@@ -204,7 +204,7 @@ You are on a feature branch with substantial WIP. Recommended order:
 3. **Create branch layout on origin** if missing:
    - `develop` = integration
    - `main` = first stable (can be created from first release)
-   - optional `staging`
+   - optional `stage`
 4. **Cut `release/v0.1.0`**, freeze changelog, smoke test.
 5. **Merge to `main`**, tag `v0.1.0`, GitHub Release notes.
 6. **Make repo public** only after a final `git grep` / clone smoke (see PUBLIC_RELEASE.md).
@@ -240,7 +240,7 @@ Not required for GitHub releases. When ready:
 - [ ] Smoke: setup → process → search → TUI open PDF → list export
 - [ ] Tag `vX.Y.Z` on `main` after merge
 - [ ] GitHub Release notes pasted from changelog
-- [ ] `develop` (and `staging`) back-merged
+- [ ] `develop` (and `stage`) back-merged
 
 ---
 
@@ -248,7 +248,7 @@ Not required for GitHub releases. When ready:
 
 ```bash
 # cut release
-git checkout -b release/v0.1.0 staging   # or develop
+git checkout -b release/v0.1.0 stage   # or develop
 # edit pyproject.toml version + CHANGELOG
 git commit -am "release: v0.1.0"
 git push -u origin release/v0.1.0
