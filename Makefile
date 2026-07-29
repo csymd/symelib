@@ -1,11 +1,13 @@
-.PHONY: help install sync test lint format check clean db-up db-down db-migrate rebuild
+.PHONY: help setup install install-cli sync test lint format check clean db-up db-down db-migrate rebuild pre-commit-install pre-commit-run
 
 help:
 	@echo "Available commands for elib:"
 	@echo "  make help              Show this help"
+	@echo "  make setup             Interactive setup (NCBI email/API key → config + env)"
 	@echo "  make sync              Sync dependencies with uv (core + dev + all extras)"
-	@echo "  make install           (legacy) Install package in editable mode with uv pip"
-	@echo "  make db-up             Start Postgres + pgvector (for agents/RAG only; see compose.yml)"
+	@echo "  make install-cli       Install 'elib' onto PATH via uv tool (~/.local/bin)"
+	@echo "  make install           Install package in editable mode with uv pip (+ extras)"
+	@echo "  make db-up             Start Postgres + pgvector (for agents/RAG only; see compose.yaml)"
 	@echo "  make db-down           Stop DB containers"
 	@echo "  make db-migrate        Run Alembic migrations (Postgres path)"
 	@echo "  make rebuild           Rebuild FTS index (+ --embeddings into PGVector; supports --reset)"
@@ -13,29 +15,40 @@ help:
 	@echo "  make lint              Lint with Ruff (checks only)"
 	@echo "  make format            Format code with Ruff (applies fixes)"
 	@echo "  make check             Run all checks (lint + format + tests)"
+	@echo "  make pre-commit-install  Install git pre-commit hooks (once per clone)"
+	@echo "  make pre-commit-run      Run pre-commit on all files"
 	@echo "  make clean             Remove build artifacts and caches"
 
 sync:
 	uv sync --all-extras
 
+setup:
+	@bash scripts/setup.sh
+
+install-cli:
+	uv tool install --force --editable .
+	@echo "Installed elib → ensure ~/.local/bin is on PATH"
+	@echo "  export PATH=\"\$$HOME/.local/bin:\$$PATH\""
+	@command -v elib >/dev/null && elib --help | head -5 || true
+
 install:
 	uv pip install -e ".[db,agents]"
 
 db-up:
-	@if [ ! -f compose.yml ]; then \
-		echo "ERROR: compose.yml is missing. See REFACTOR_PLAN.md and QUICKSTART.md."; \
+	@if [ ! -f compose.yaml ]; then \
+		echo "ERROR: compose.yaml is missing. See QUICKSTART.md."; \
 		echo "       Postgres + pgvector is only required for the optional [agents] path."; \
 		echo "       Core functionality uses SQLite and does not need 'make db-up'."; \
 		exit 1; \
 	fi
-	podman compose -f compose.yml up -d postgres
+	podman compose -f compose.yaml up -d postgres
 
 db-down:
-	@if [ ! -f compose.yml ]; then \
-		echo "compose.yml not present — nothing to bring down."; \
+	@if [ ! -f compose.yaml ]; then \
+		echo "compose.yaml not present — nothing to bring down."; \
 		exit 0; \
 	fi
-	podman compose -f compose.yml down
+	podman compose -f compose.yaml down
 
 db-migrate:
 	@echo "db-migrate: Sets up the Postgres vector store for agents/RAG (pgvector extension + data_document_nodes table)."
@@ -64,6 +77,13 @@ lint-check:
 
 check: lint-check test
 	@echo "All checks passed!"
+
+pre-commit-install:
+	uv run --group dev pre-commit install
+	@echo "pre-commit hooks installed (ruff format + lint on git commit)"
+
+pre-commit-run:
+	uv run --group dev pre-commit run --all-files
 
 clean:
 	rm -rf build/ dist/ *.egg-info htmlcov/ .coverage .pytest_cache/ .ruff_cache/ .venv/

@@ -21,7 +21,7 @@ uv run --extra db alembic upgrade head
 ```
 
 The environment tries hard to use the same connection as the rest of the app
-(see `env.py` + `src/elib/db/engine.py` and the defaults from `compose.yml`).
+(see `env.py` + `src/elib/db/engine.py` and the defaults from `compose.yaml`).
 
 ## Notes
 

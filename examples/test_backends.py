@@ -19,7 +19,8 @@ def test_backend(use_cli: bool):
     print(f"{'=' * 60}\n")
 
     try:
-        client = NCBIClient(email="nberry11@gmail.com", use_cli=use_cli)
+        email = __import__("os").environ.get("ELIB_NCBI_EMAIL", "you@example.com")
+        client = NCBIClient(email=email, use_cli=use_cli)
 
         # Test DOI
         test_doi = "10.3389/fphys.2021.627320"

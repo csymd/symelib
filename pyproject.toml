@@ -11,6 +11,7 @@ dependencies = [
     "requests>=2.31",
     "rich>=13.0",
     "PyPDF2>=3.0",
+    "textual>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,7 @@ agents = [
 dev = [
     "pytest",
     "ruff",
+    "pre-commit",
 ]
 
 [project.scripts]
@@ -47,6 +49,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+elib = ["tui/*.tcss", "tui/**/*.tcss"]
 
 [tool.uv]
 python-preference = "only-managed"

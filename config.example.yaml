@@ -1,0 +1,36 @@
+# elib configuration template (safe to commit).
+#
+# Copy to a *local* config path (do not commit secrets):
+#   cp config.example.yaml ~/elibrary/config.yaml
+#   # or:  cp config.example.yaml ./config.yaml   (gitignored)
+# Then run:  elib setup   # creates dirs + env file
+#
+# Layout under $ELIB_HOME (default ~/elibrary):
+#   cart/      raw / inbox PDFs
+#   library/   processed PDFs
+#   texts/     books / other materials
+#   data/      elib.db (SQLite)
+#   exports/   BibTeX exports
+#   tmp/       scratch / temporary files
+
+ncbi_email: you@example.com
+# Optional — higher NCBI rate limits (~10/s). Prefer env over committing:
+#   export ELIB_NCBI_API_KEY=...
+# ncbi_api_key: null
+
+ncbi_use_cli: false
+
+# Paths ( ~ is expanded). Prefer $ELIB_HOME layout from `elib setup`.
+database_path: ~/elibrary/data/elib.db
+target_directory: ~/elibrary/library
+cart_directory: ~/elibrary/cart
+texts_directory: ~/elibrary/texts
+exports_directory: ~/elibrary/exports
+temp_directory: ~/elibrary/tmp
+
+# PDF viewer: papers | firefox | evince | full command
+# pdf_viewer: papers
+
+# Optional markers for your own sync tooling (informational only)
+# s3_bucket: your-bucket-name
+# rclone_remote: s3

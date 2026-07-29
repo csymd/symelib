@@ -7,7 +7,20 @@ from datetime import datetime
 from pydantic import ValidationError
 import pytest
 
-from elib.models.metadata import DocumentMetadata, SearchQuery, SearchResult, SortBy, SortOrder
+from elib.models.metadata import (
+    DocumentMetadata,
+    MetadataSource,
+    MetadataStatus,
+    SearchQuery,
+    SearchResult,
+    SortBy,
+    SortOrder,
+    classify_metadata_status,
+    has_real_doi,
+    has_real_pmid,
+    is_synthetic_doi,
+    is_synthetic_pmid,
+)
 
 
 # Test for DocumentMetadata model
@@ -35,6 +48,40 @@ def test_document_metadata_creation():
     assert metadata.file_size == 1024
     assert isinstance(metadata.added_date, datetime)
     assert metadata.s3_synced is False
+    assert metadata.metadata_status == MetadataStatus.pending
+    assert metadata.metadata_source is None
+
+
+def test_document_metadata_with_status():
+    metadata = DocumentMetadata(
+        file_path="/path/to/file",
+        filename="example.pdf",
+        doi="10.1234/example.doi",
+        title="Example Title",
+        authors_json='[{"last_name": "Doe"}]',
+        journal="Example Journal",
+        file_size=1024,
+        metadata_status=MetadataStatus.complete,
+        metadata_source=MetadataSource.pubmed,
+    )
+    assert metadata.metadata_status == MetadataStatus.complete
+    assert metadata.metadata_source == MetadataSource.pubmed
+    assert metadata.has_real_doi() is True
+
+
+def test_document_metadata_empty_doi_default():
+    metadata = DocumentMetadata(
+        file_path="/path/to/file",
+        filename="local.pdf",
+        title="Local Only",
+        authors_json="[]",
+        journal="Local",
+        file_size=100,
+        metadata_status=MetadataStatus.fallback,
+        metadata_source=MetadataSource.local,
+    )
+    assert metadata.doi == ""
+    assert metadata.has_real_doi() is False
 
 
 def test_document_metadata_validation_error():
@@ -50,6 +97,64 @@ def test_document_metadata_validation_error():
         )
 
 
+def test_synthetic_helpers():
+    assert is_synthetic_doi(None)
+    assert is_synthetic_doi("")
+    assert is_synthetic_doi("10.9999/elib-local-123")
+    assert not is_synthetic_doi("10.1234/real.doi")
+    assert has_real_doi("10.1234/real.doi")
+    assert not has_real_doi("10.9999/elib-local-123")
+
+    assert is_synthetic_pmid(None)
+    assert is_synthetic_pmid("LOCAL-12345")
+    assert not is_synthetic_pmid("12345678")
+    assert has_real_pmid("12345678")
+    assert not has_real_pmid("LOCAL-1")
+
+
+def test_classify_metadata_status():
+    assert (
+        classify_metadata_status(
+            doi="",
+            pmid=None,
+            title="Something",
+            authors_json="[]",
+            abstract=None,
+        )
+        == MetadataStatus.fallback
+    )
+    assert (
+        classify_metadata_status(
+            doi="10.9999/elib-local-1",
+            pmid="LOCAL-1",
+            title="Something",
+            authors_json="[]",
+            abstract="preview",
+        )
+        == MetadataStatus.fallback
+    )
+    assert (
+        classify_metadata_status(
+            doi="10.1234/x",
+            pmid="1",
+            title="A real title",
+            authors_json='[{"last_name": "Doe"}]',
+            abstract="Full abstract text.",
+        )
+        == MetadataStatus.complete
+    )
+    assert (
+        classify_metadata_status(
+            doi="10.1234/x",
+            pmid="1",
+            title="A real title",
+            authors_json='[{"last_name": "Doe"}]',
+            abstract=None,
+        )
+        == MetadataStatus.partial
+    )
+
+
 # Test for SearchQuery model
 def test_search_query_defaults():
     query = SearchQuery()
@@ -61,6 +166,7 @@ def test_search_query_defaults():
     assert query.doi is None
     assert query.pmid is None
     assert query.journal is None
+    assert query.metadata_status is None
     assert query.sort_by == SortBy.relevance
     assert query.sort_order == SortOrder.desc
     assert query.limit == 50

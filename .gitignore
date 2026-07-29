@@ -122,14 +122,21 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments & local secrets (never commit)
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Local app config (use config.example.yaml as the template)
+config.yaml
+*.local.yaml
+*.local.yml
 
 # Spyder project settings
 .spyderproject
@@ -167,10 +174,17 @@ cython_debug/
 # Database files
 data/
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
 
-# Ruff cache
+# Local library / export artifacts if someone points paths into the repo
+exports/
+library/
+downloads/
+processed/
+
+# Ruff / pre-commit caches
 .ruff_cache/
 
 # PDF test files (optional - uncomment if you don't want to track test PDFs)
@@ -186,19 +200,15 @@ data/
 *.bak
 auto-save-list/
 
-# Emacs session-specific data directories
-downloads/
-processed/
-library/
-
 # S3 sync temporary files
 .rclone/
 rclone.conf
 
-# Local development files
+# Local development scratch (repo-local temp)
 scratch/
 tmp/
 temp/
+.tmp/
 notes.org
 TODO.org
 NOTES.org

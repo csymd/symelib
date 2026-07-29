@@ -1,0 +1,41 @@
+# compose.yaml — Postgres + pgvector for optional elib agents/RAG
+#
+# NOT required for core elib (PDF process / search / TUI use SQLite).
+# Local development only — weak default password; bind localhost only.
+#
+# Usage (repo root):
+#   make db-up      # podman/docker compose
+#   make db-down
+#
+# Default URL:
+#   postgresql+psycopg://elib:elib@127.0.0.1:5432/elib
+#
+# Toolbox: Postgres on host, app in container — use host.containers.internal:
+#   export DATABASE_URL=postgresql+psycopg://elib:elib@host.containers.internal:5432/elib
+#
+# Override credentials/port:
+#   POSTGRES_PASSWORD=... POSTGRES_PORT=5433 podman compose -f compose.yaml up -d postgres
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: elib-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elib}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elib}
+      POSTGRES_DB: ${POSTGRES_DB:-elib}
+    ports:
+      # Bind loopback only (do not expose Postgres on all interfaces)
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - elib_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elib} -d ${POSTGRES_DB:-elib}"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+volumes:
+  elib_pgdata:

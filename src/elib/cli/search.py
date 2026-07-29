@@ -8,28 +8,13 @@ from enum import Enum
 
 import typer
 
-from elib.models.metadata import SearchQuery
+from elib.models.metadata import SearchField, SearchQuery, SortBy, SortOrder
 from elib.services.db_manager import DatabaseManager
 from elib.services.ncbi_client import NCBIClient
-
-# from elib.services.file_manager import FileManager
-# from elib.services.pdf_processor import PDFProcessor
 
 # ========================================================= #
 # Enums and Constants                                    #
 # ======================================================== #
-
-
-class SortBy(str, Enum):
-    RELEVANCE = "relevance"
-    YEAR = "year"
-    TITLE = "title"
-    ADDED_DATE = "added_date"
-
-
-class SortOrder(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
 
 
 class SearchSource(str, Enum):
@@ -51,16 +36,33 @@ class ExportFormat(str, Enum):
 
 def search(
     ctx: typer.Context,
-    text: str | None = typer.Argument(None, help="Full-text serach (title, abstract, keywords)"),
-    author: str = typer.Option(None, help="Filter by author name."),
+    text: str | None = typer.Argument(
+        None,
+        help="Search text (prefix match by default: cardio → cardiovascular)",
+    ),
+    author: str = typer.Option(None, help="Filter by author name (substring)."),
+    field: SearchField = typer.Option(
+        SearchField.all,
+        "--field",
+        "-f",
+        help="Scope free-text: all | title | keywords | author | abstract",
+    ),
     year_from: int = typer.Option(None, help="Filter by publication year (start)."),
     year_to: int = typer.Option(None, help="Filter by publication year (end)."),
     journal: str = typer.Option(None, help="Filter by journal."),
     doi: str = typer.Option(None, help="Filter by DOI."),
     pmid: str = typer.Option(None, help="Filter by PMID."),
     keywords: list[str] = typer.Option(None, "--keyword", help="Add keyword filter."),
-    sort_by: SortBy = typer.Option(SortBy.RELEVANCE),
-    sort_order: SortOrder = typer.Option(SortOrder.DESC),
+    sort_by: SortBy = typer.Option(
+        SortBy.relevance,
+        "--sort-by",
+        help="Sort: relevance | year | author | title | added_date",
+    ),
+    sort_order: SortOrder = typer.Option(
+        SortOrder.desc,
+        "--sort-order",
+        help="asc | desc",
+    ),
     limit: int = typer.Option(
         20,
         help="Limit the number of results (default=20).",
@@ -68,7 +70,7 @@ def search(
     ),
     offset: int = typer.Option(
         0,
-        help="Offset for pagintation.",
+        help="Offset for pagination.",
         show_default=True,
     ),
     source: SearchSource = typer.Option(SearchSource.LOCAL),
@@ -78,16 +80,17 @@ def search(
     """
     Search your local library and/or PubMed.
 
+    Free-text uses **prefix matching** (``cardio`` matches ``cardiovascular``).
+    Scope with ``--field title|keywords|author|abstract|all`` (default: all).
+
     Examples:
 
-        # Search local library only
-        elib search --text "heart rate recovery"
-
-        # Search PubMed only
-        elib search --text "heart rate recovery" --source pubmed
-
-        # Search both
-        elib search --text "heart rate recovery" --source both
+        elib search cardio
+        elib search cardio --field title
+        elib search Smith --field author
+        elib search --sort-by year --sort-order desc
+        elib search --sort-by author
+        elib search "heart rate" --source pubmed
     """
     config = ctx.obj["config"]
     logger = ctx.obj["logger"]
@@ -110,6 +113,7 @@ def search(
             doi=doi,
             pmid=pmid,
             keywords=list(keywords),
+            search_field=field,
             sort_by=sort_by,
             sort_order=sort_order,
             limit=limit,

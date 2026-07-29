@@ -2,6 +2,7 @@
 Debug NCBI connectivity for specific DOIs.
 """
 
+import os
 from pathlib import Path
 import sys
 
@@ -20,10 +21,10 @@ def test_dois():
         config = Config.load()
         email = config.ncbi_email
         api_key = config.ncbi_api_key
-    except:
-        email = "nberry11@gmail.com"
-        api_key = None
-        print("⚠ Could not load config, using default email")
+    except Exception:
+        email = os.environ.get("ELIB_NCBI_EMAIL", "you@example.com")
+        api_key = os.environ.get("ELIB_NCBI_API_KEY") or None
+        print("⚠ Could not load config; set ELIB_NCBI_EMAIL or run elib setup")
 
     print(f"Using email: {email}")
     print(f"API key: {'✓' if api_key else '✗'}")

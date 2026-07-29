@@ -3,11 +3,11 @@ src/elib/services/pdf_processor.py
 """
 
 from pathlib import Path
-import re
 
 import PyPDF2
 
 from elib.models.document import DOI, PDFDocument
+from elib.utils.doi_parser import extract_doi_from_text, extract_pmid_from_text, normalize_doi
 from elib.utils.logging import LoggerConfig, get_shared_logger
 
 # === Initialize Logger ===
@@ -21,15 +21,8 @@ logger = get_shared_logger(LoggerConfig(name="pdf_processor"))
 class PDFProcessor:
     """Service for processing PDF files"""
 
-    DOI_PATTERNS = [
-        r"10\.\d{4,}/[-._;()\/:A-Za-z0-9]+",
-        r"doi:\s*10\.\d{4,}/[-._;()\/:A-Za-z0-9]+",
-        r"DOI:\s*10\.\d{4,}/[-._;()\/:A-Za-z0-9]+",
-    ]
-
     def __init__(self):
-        self.compiled_patterns = [re.compile(p, re.IGNORECASE) for p in self.DOI_PATTERNS]
-        logger.info("PDFProcessor initialized", pattern_count=len(self.compiled_patterns))
+        logger.info("PDFProcessor initialized")
 
     def scan_directory(self, directory: Path) -> list[PDFDocument]:
         """Scan directory for PDF files"""
@@ -98,18 +91,21 @@ class PDFProcessor:
         return self.extract_text(pdf_path, max_pages=max_pages)
 
     def find_doi(self, text: str) -> DOI | None:
-        """Find DOI in extracted text"""
-        for pattern in self.compiled_patterns:
-            match = pattern.search(text)
-            if match:
-                doi_string = match.group(0)
-                # Clean up the DOI
-                doi_string = doi_string.replace("doi:", "").replace("DOI:", "").strip()
-                try:
-                    return DOI(value=doi_string)
-                except ValueError:
-                    continue
-        return None
+        """Find and normalize a DOI in extracted text."""
+        doi_string = extract_doi_from_text(text)
+        if not doi_string:
+            return None
+        normalized = normalize_doi(doi_string)
+        if not normalized:
+            return None
+        try:
+            return DOI(value=normalized)
+        except ValueError:
+            return None
+
+    def find_pmid(self, text: str) -> str | None:
+        """Find a PMID mention in extracted text."""
+        return extract_pmid_from_text(text)
 
     def process_document(self, document: PDFDocument) -> PDFDocument:
         """Process a single PDF document to extract text and find DOI"""

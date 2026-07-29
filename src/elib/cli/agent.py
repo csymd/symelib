@@ -22,10 +22,13 @@ def agent(query: str):
         # Give the user visibility into how much data the RAG index actually has
         try:
             from elib.agents.index import get_node_count
+
             node_count = get_node_count()
             if node_count == 0:
                 console.print("[yellow]Note:[/yellow] The vector index currently has 0 chunks.")
-                console.print("       Run `elib rebuild-index --embeddings` after processing some PDFs.")
+                console.print(
+                    "       Run `elib rebuild-index --embeddings` after processing some PDFs."
+                )
             else:
                 console.print(f"[dim]Searching across ~{node_count} indexed chunks...[/dim]")
         except Exception:
@@ -37,8 +40,12 @@ def agent(query: str):
         return response
     except Exception as e:
         console.print(f"[red]Agent query failed:[/red] {e}")
-        console.print("Ensure 'agents' extra is installed, Ollama is running, and the DB is up (make db-up).")
-        console.print("You may also need to run `elib rebuild-index --embeddings` after ingesting papers.")
+        console.print(
+            "Ensure 'agents' extra is installed, Ollama is running, and the DB is up (make db-up)."
+        )
+        console.print(
+            "You may also need to run `elib rebuild-index --embeddings` after ingesting papers."
+        )
         raise typer.Exit(1)
 
 

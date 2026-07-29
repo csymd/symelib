@@ -3,11 +3,10 @@ def create_llama_index():
     import os
 
     from llama_index.core import Settings, VectorStoreIndex
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
     from llama_index.llms.ollama import Ollama
 
     # NOTE: full agents support requires the [agents] extra (now includes db runtime deps)
-    # + a running Postgres+pgvector DB (see compose.yml and src/elib/db/engine.py).
+    # + a running Postgres+pgvector DB (see compose.yaml and src/elib/db/engine.py).
     # Core metadata/search remains SQLite-only.
     _ensure_settings()
 
@@ -16,7 +15,9 @@ def create_llama_index():
     # set OLLAMA_HOST=http://host.containers.internal:11434 (or OLLAMA_BASE_URL)
     # before running elib agent / rebuild --embeddings. "ollama" command itself
     # is typically used on the host.
-    ollama_base_url = os.getenv("OLLAMA_HOST") or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"
+    ollama_base_url = (
+        os.getenv("OLLAMA_HOST") or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"
+    )
 
     Settings.llm = Ollama(
         model="llama3.1",  # or llama3.2, phi3, etc. - change as needed
@@ -197,7 +198,9 @@ def populate_embeddings(db_manager, max_pages_per_pdf: int | None = 40, reset: b
             nodes=all_nodes,
             storage_context=storage_context,
         )
-        print(f"\nEmbedded and stored {len(all_nodes)} chunks from {source_docs} papers into PGVector.")
+        print(
+            f"\nEmbedded and stored {len(all_nodes)} chunks from {source_docs} papers into PGVector."
+        )
     else:
         print("No usable text found to embed.")
 

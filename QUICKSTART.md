@@ -21,7 +21,20 @@ elib process /path/to/some/pdfs
 # 4. Search your local library
 elib search "CRISPR oncology"
 
-# 5. Rebuild the full-text search index after bulk changes
+# 5. Metadata quality + re-enrich incomplete rows
+elib check-metadata
+elib enrich --status fallback --limit 20
+
+# 6. Named lists (grant/manuscript) → BibTeX
+elib list create "my-project" -d "Working bibliography"
+# elib list add "my-project" --id 1
+# elib list export "my-project" -o project.bib
+
+# 7. Interactive TUI
+elib tui
+# Keys: / search · enter open abstract · a add-to-list · l lists · e export · q quit
+
+# 8. Rebuild the full-text search index after bulk changes
 elib rebuild-index
 ```
 
@@ -29,7 +42,7 @@ See `config.yaml` (edit `ncbi_email` at minimum) and the main README.
 
 ## Full agents + RAG path (Postgres + pgvector + Ollama)
 
-This path is still being stabilized on the current refactor branch. The pieces below will get you past the previous "missing compose.yml" / "make db-up" hard failure.
+This path is still being stabilized on the current refactor branch. The pieces below will get you past the previous "missing compose.yaml" / "make db-up" hard failure.
 
 ```bash
 # 1. Install everything
@@ -123,7 +136,7 @@ It usually works (podman socket is forwarded), but:
 - The DB container still runs on the *host*.
 - You **still must** use the `host.containers.internal` form of `DATABASE_URL` for any code that connects to Postgres (alembic, the elib agents, etc.).
 
-See the top of `compose.yml` for more details on the full workflow.
+See the top of `compose.yaml` for more details on the full workflow.
 
 ## Troubleshooting (especially after podman rebuild)
 

@@ -1,7 +1,7 @@
 """initial pgvector setup for document_nodes
 
 Revision ID: 0001_initial_vector_store
-Revises: 
+Revises:
 Create Date: 2026-06-09
 
 This is the first migration for the optional Postgres + pgvector vector store
@@ -18,12 +18,10 @@ Note:
   create the table, but having it in Alembic gives us proper version control
   and makes `make db-migrate` meaningful.
 """
+
 from __future__ import annotations
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSON, VARCHAR
-
 
 # revision identifiers, used by Alembic.
 revision = "0001_initial_vector_store"

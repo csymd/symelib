@@ -91,12 +91,14 @@ def test_processed_document_creation():
     assert processed_doc.metadata_stored is True
 
 
-def test_processed_document_missing_doi():
+def test_processed_document_optional_doi():
+    """Local-only papers may have no real DOI after honest fallback."""
     pdf_path = Path("/path/to/document.pdf")
-    with pytest.raises(ValidationError):
-        ProcessedDocument(
-            file_path=pdf_path,
-            original_filename="document.pdf",
-            file_size=2048,
-            new_filename="processed_document.pdf",
-        )
+    processed_doc = ProcessedDocument(
+        file_path=pdf_path,
+        original_filename="document.pdf",
+        file_size=2048,
+        new_filename="processed_document.pdf",
+    )
+    assert processed_doc.doi is None
+    assert processed_doc.processed is True

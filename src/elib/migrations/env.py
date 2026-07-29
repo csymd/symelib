@@ -8,7 +8,7 @@ Key points:
 - target_metadata = None because we don't (yet) have SQLAlchemy declarative
   models for autogenerate on the main documents table.
 - We pull the database URL from elib.db.engine (which respects DATABASE_URL
-  env var and matches the defaults in compose.yml) so that `alembic` commands
+  env var and matches the defaults in compose.yaml) so that `alembic` commands
   and `make db-migrate` "just work" with the same connection as the rest of
   the agents code.
 - First migration (0001) sets up the pgvector extension + the
@@ -17,7 +17,6 @@ Key points:
 
 from __future__ import annotations
 
-import logging
 from logging.config import fileConfig
 
 from alembic import context
@@ -33,11 +32,11 @@ if config.config_file_name is not None:
 
 # Pull the database URL from our application code so that migrations
 # use the same connection details (and defaults) as the agents vector store.
-# This respects the DATABASE_URL environment variable and the compose.yml defaults.
+# This respects the DATABASE_URL environment variable and the compose.yaml defaults.
 try:
     # Ensure src is importable when running alembic directly
-    import sys
     from pathlib import Path
+    import sys
 
     project_root = Path(__file__).resolve().parents[3]
     if str(project_root) not in sys.path:

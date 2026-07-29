@@ -58,7 +58,7 @@ class PDFDocument(BaseModel):
 class ProcessedDocument(PDFDocument):
     """Document after successful processing"""
 
-    doi: DOI  # Required for processed docs
+    doi: DOI | None = None  # Real DOI when available; None for local-only
     new_filename: str
     pmid: str | None = None
     processed: bool = True

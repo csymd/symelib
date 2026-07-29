@@ -1,0 +1,281 @@
+/* elib TUI themes
+   Default: dark cyan (SymView-like)
+   Light:   beige / parchment — toggle with `t`
+*/
+
+/* ========== DARK (default) ========== */
+
+$elib-cyan: #22d3ee;
+$elib-muted: #6b7280;
+$elib-bg: #0b1220;
+$elib-panel: #111827;
+$elib-border: #164e63;
+$elib-text: #e5e7eb;
+$elib-meta: #9ca3af;
+
+Screen {
+    background: $elib-bg;
+    color: $elib-text;
+}
+
+#app-header {
+    dock: top;
+    height: 1;
+    padding: 0 1;
+    background: $elib-bg;
+    color: #ffffff;
+    text-style: bold;
+}
+
+#action-bar {
+    dock: top;
+    height: 1;
+    padding: 0 1;
+    color: $elib-cyan;
+    background: $elib-bg;
+}
+
+#search-row {
+    height: 3;
+    padding: 0 1;
+}
+
+#search-field-badge {
+    width: 12;
+    height: 3;
+    content-align: center middle;
+    color: $elib-cyan;
+    text-style: bold;
+    border: solid $elib-border;
+    margin-right: 1;
+    background: $elib-panel;
+}
+
+/* Clickable field cycle affordance */
+#search-field-badge:hover {
+    background: $elib-border;
+    color: $elib-text;
+}
+
+#search-input {
+    width: 1fr;
+    border: solid $elib-border;
+    background: $elib-panel;
+    color: $elib-text;
+}
+
+#search-input:focus {
+    border: solid $elib-cyan;
+}
+
+#docs-table, #lists-table, #list-items-table {
+    height: 1fr;
+    margin: 0 1;
+    background: $elib-panel;
+    border: solid $elib-border;
+    color: $elib-text;
+}
+
+DataTable > .datatable--header {
+    text-style: bold;
+    color: $elib-cyan;
+    background: $elib-bg;
+}
+
+DataTable > .datatable--cursor {
+    background: $elib-border;
+    color: #ffffff;
+    text-style: bold;
+}
+
+DataTable > .datatable--odd-row {
+    background: $elib-bg;
+}
+
+#status-bar {
+    height: 1;
+    padding: 0 1;
+    color: $elib-muted;
+    background: $elib-bg;
+}
+
+#detail-scroll {
+    height: 1fr;
+    padding: 1 2;
+    margin: 0 1;
+    border: solid $elib-border;
+    background: $elib-panel;
+}
+
+#detail-title {
+    text-style: bold;
+    color: $elib-cyan;
+    margin-bottom: 1;
+}
+
+#detail-meta {
+    color: $elib-meta;
+    margin-bottom: 1;
+}
+
+.section-label {
+    text-style: bold;
+    margin: 1 0 0 0;
+    color: $elib-cyan;
+}
+
+ModalScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+#add-list-dialog, #create-list-dialog {
+    width: 64;
+    height: auto;
+    max-height: 80%;
+    border: solid $elib-cyan;
+    background: $elib-panel;
+    padding: 1 2;
+    color: $elib-text;
+}
+
+#dialog-title {
+    text-style: bold;
+    color: $elib-cyan;
+    margin-bottom: 1;
+}
+
+#dialog-help {
+    color: $elib-muted;
+    margin-top: 1;
+}
+
+Footer {
+    background: $elib-bg;
+    color: $elib-muted;
+}
+
+Header {
+    background: $elib-bg;
+    color: $elib-cyan;
+    text-style: bold;
+}
+
+/* ========== LIGHT / BEIGE (App.theme-light) ==========
+   Keep zebra striping subtle (near-white) so body text stays high-contrast. */
+
+App.theme-light Screen {
+    background: #f7f3ea;
+    color: #2a2218;
+}
+
+App.theme-light #app-header {
+    background: #efe8d8;
+    color: #1f1810;
+}
+
+App.theme-light #action-bar {
+    background: #efe8d8;
+    color: #7a4e22;
+}
+
+App.theme-light #search-field-badge {
+    color: #7a4e22;
+    border: solid #d2c4a8;
+    background: #fffdf8;
+}
+
+App.theme-light #search-input {
+    border: solid #d2c4a8;
+    background: #fffdf8;
+    color: #2a2218;
+}
+
+App.theme-light #search-input:focus {
+    border: solid #7a4e22;
+}
+
+App.theme-light #docs-table,
+App.theme-light #lists-table,
+App.theme-light #list-items-table {
+    background: #fffdf8;
+    border: solid #d2c4a8;
+    color: #2a2218;
+}
+
+App.theme-light DataTable > .datatable--header {
+    color: #5c3a1a;
+    background: #efe8d8;
+    text-style: bold;
+}
+
+App.theme-light DataTable > .datatable--cursor {
+    background: #e6d7b8;
+    color: #1a1410;
+    text-style: bold;
+}
+
+/* Was too dark (#f3efe4) — lighten so text stays readable */
+App.theme-light DataTable > .datatable--odd-row {
+    background: #faf6ee;
+}
+
+App.theme-light DataTable > .datatable--even-row {
+    background: #fffdf8;
+}
+
+App.theme-light #status-bar {
+    color: #5c5245;
+    background: #efe8d8;
+}
+
+App.theme-light #detail-scroll {
+    border: solid #d2c4a8;
+    background: #fffdf8;
+    color: #2a2218;
+}
+
+App.theme-light #detail-title {
+    color: #5c3a1a;
+}
+
+App.theme-light #detail-meta {
+    color: #4a4034;
+}
+
+App.theme-light #detail-abstract {
+    color: #2a2218;
+}
+
+App.theme-light .section-label {
+    color: #7a4e22;
+}
+
+App.theme-light ModalScreen {
+    background: rgba(60, 50, 35, 0.28);
+}
+
+App.theme-light #add-list-dialog,
+App.theme-light #create-list-dialog {
+    border: solid #7a4e22;
+    background: #fffdf8;
+    color: #2a2218;
+}
+
+App.theme-light #dialog-title {
+    color: #5c3a1a;
+}
+
+App.theme-light #dialog-help {
+    color: #5c5245;
+}
+
+App.theme-light Footer {
+    background: #efe8d8;
+    color: #5c5245;
+}
+
+App.theme-light Header {
+    background: #efe8d8;
+    color: #5c3a1a;
+}

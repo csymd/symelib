@@ -2,11 +2,10 @@
 src/elib/search/search_pubmed.py
 """
 
-from datetime import datetime
-
 import requests
 
-from elib.models.reference import Author, Journal, Reference
+from elib.models.reference import Reference
+from elib.services.pubmed_xml import parse_pubmed_xml
 from elib.utils.logging import LoggerConfig, get_shared_logger
 
 # === Initialize Logger ===
@@ -119,8 +118,7 @@ class PubMedSearchService:
             response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
 
-            # Parse XML and extract references
-            references = self._parse_pubmed_xml(response.text)
+            references = parse_pubmed_xml(response.text)
 
             logger.info("References fetched", count=len(references))
 
@@ -129,143 +127,3 @@ class PubMedSearchService:
         except Exception as e:
             logger.error("Failed to fetch references", error=str(e), pmid_count=len(pmids))
             return []
-
-    def _parse_pubmed_xml(self, xml_string: str) -> list[Reference]:
-        """Parse PubMed XML response to Reference objects."""
-        import xml.etree.ElementTree as ET
-
-        references = []
-
-        try:
-            root = ET.fromstring(xml_string)
-            articles = root.findall(".//PubmedArticle")
-
-            for article in articles:
-                try:
-                    ref = self._parse_single_article(article)
-                    if ref:
-                        references.append(ref)
-                except Exception as e:
-                    logger.warning("Failed to parse article", error=str(e))
-
-        except Exception as e:
-            logger.error("XML parsing failed", error=str(e))
-
-        return references
-
-    def _parse_single_article(self, article) -> Reference | None:
-        """Parse single PubmedArticle XML element."""
-
-        # Extract PMID
-        pmid_elem = article.find(".//PMID")
-        pmid = pmid_elem.text if pmid_elem is not None else ""
-
-        # Extract DOI
-        doi_elem = article.find(".//ArticleId[@IdType='doi']")
-        doi = doi_elem.text if doi_elem is not None else ""
-
-        # Extract title
-        title_elem = article.find(".//ArticleTitle")
-        title = title_elem.text if title_elem is not None else "No title"
-
-        # Extract authors
-        authors = []
-        for author_elem in article.findall(".//Author"):
-            last_name = author_elem.find("LastName")
-            first_name = author_elem.find("ForeName")
-            initials = author_elem.find("Initials")
-
-            if last_name is not None:
-                authors.append(
-                    Author(
-                        last_name=last_name.text,
-                        first_name=first_name.text if first_name is not None else None,
-                        initials=initials.text if initials is not None else None,
-                    )
-                )
-
-        # Extract journal
-        journal_elem = article.find(".//Journal")
-        journal_title = "Unknown"
-        journal_abbr = None
-        volume = None
-        issue = None
-
-        if journal_elem is not None:
-            title_elem = journal_elem.find(".//Title")
-            if title_elem is not None:
-                journal_title = title_elem.text
-
-            abbr_elem = journal_elem.find(".//ISOAbbreviation")
-            if abbr_elem is not None:
-                journal_abbr = abbr_elem.text
-
-            vol_elem = journal_elem.find(".//Volume")
-            if vol_elem is not None:
-                volume = vol_elem.text
-
-            iss_elem = journal_elem.find(".//Issue")
-            if iss_elem is not None:
-                issue = iss_elem.text
-
-        journal = Journal(
-            title=journal_title, abbreviation=journal_abbr, volume=volume, issue=issue
-        )
-
-        # Extract publication date
-        pub_date = None
-        date_elem = article.find(".//PubDate")
-        if date_elem is not None:
-            year_elem = date_elem.find("Year")
-            month_elem = date_elem.find("Month")
-            day_elem = date_elem.find("Day")
-
-            if year_elem is not None:
-                try:
-                    year = int(year_elem.text)
-                    month = self._month_to_int(month_elem.text) if month_elem is not None else 1
-                    day = int(day_elem.text) if day_elem is not None else 1
-                    pub_date = datetime(year=year, month=month, day=day).date()
-                except (ValueError, AttributeError):
-                    pass
-
-        # Extract abstract
-        abstract = None
-        abstract_elem = article.find(".//AbstractText")
-        if abstract_elem is not None:
-            abstract = abstract_elem.text
-
-        # Extract keywords
-        keywords = [kw.text for kw in article.findall(".//Keyword") if kw.text]
-        mesh_terms = [mesh.text for mesh in article.findall(".//DescriptorName") if mesh.text]
-
-        return Reference(
-            pmid=pmid,
-            doi=doi,
-            title=title,
-            authors=authors,
-            journal=journal,
-            publication_date=pub_date,
-            abstract=abstract,
-            keywords=keywords,
-            mesh_terms=mesh_terms,
-        )
-
-    @staticmethod
-    def _month_to_int(month_str: str) -> int:
-        """Convert month abbreviation to integer."""
-        months = {
-            "Jan": 1,
-            "Feb": 2,
-            "Mar": 3,
-            "Apr": 4,
-            "May": 5,
-            "Jun": 6,
-            "Jul": 7,
-            "Aug": 8,
-            "Sep": 9,
-            "Oct": 10,
-            "Nov": 11,
-            "Dec": 12,
-        }
-        return months.get(month_str, 1)

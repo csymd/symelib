@@ -3,21 +3,53 @@ NCBI E-utilities client with HTTP and CLI backend support.
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
 import os
 from pathlib import Path
 import subprocess
-import xml.etree.ElementTree as ET
+import time
 
 import requests
 
-from elib.models.reference import Author, Journal, Reference
+from elib.models.reference import Reference
+from elib.services.pubmed_xml import parse_first_pubmed_article
 from elib.services.search_pubmed import PubMedSearchService
+from elib.utils.doi_parser import normalize_doi
 from elib.utils.logging import LoggerConfig, get_shared_logger
-from elib.utils.rate_limiter import rate_limited_batch
+from elib.utils.rate_limiter import configure_ncbi_throttle, ncbi_throttle, rate_limited_batch
 
 # === Initialize Logger ===
 logger = get_shared_logger(LoggerConfig(name="ncbi_client"))
+
+
+def _ncbi_get(session: requests.Session, url: str, params: dict, *, max_retries: int = 5):
+    """GET with shared throttle + exponential backoff on HTTP 429."""
+    throttle = ncbi_throttle()
+    last_exc: Exception | None = None
+    for attempt in range(max_retries):
+        throttle.wait()
+        try:
+            response = session.get(url, params=params, timeout=30)
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After")
+                ra = float(retry_after) if retry_after and retry_after.isdigit() else None
+                sleep_s = throttle.on_rate_limit(ra)
+                print(f"  NCBI 429 (too many requests) — sleeping {sleep_s:.1f}s…")
+                time.sleep(sleep_s)
+                continue
+            response.raise_for_status()
+            throttle.on_success()
+            return response
+        except requests.RequestException as e:
+            last_exc = e
+            # Transient network: brief pause
+            if attempt + 1 < max_retries:
+                time.sleep(1.0 + attempt)
+                continue
+            raise
+    if last_exc:
+        raise last_exc
+    return None
+
 
 # ========================================================= #
 # NCBI E-utilities Client                                   #
@@ -47,7 +79,7 @@ class HTTPBackend(NCBIBackend):
         self.session = requests.Session()
 
     def search_by_doi(self, doi: str, email: str, api_key: str | None = None) -> str | None:
-        """Search using HTTP API."""
+        """Search using HTTP API (throttled; retries 429)."""
         url = f"{self.BASE_URL}/esearch.fcgi"
         params = {"db": "pubmed", "term": f"{doi}[DOI]", "email": email, "retmode": "json"}
 
@@ -55,10 +87,10 @@ class HTTPBackend(NCBIBackend):
             params["api_key"] = api_key
 
         try:
-            response = self.session.get(url, params=params, timeout=30)
-            response.raise_for_status()
+            response = _ncbi_get(self.session, url, params)
+            if response is None:
+                return None
             data = response.json()
-
             id_list = data.get("esearchresult", {}).get("idlist", [])
             return id_list[0] if id_list else None
 
@@ -67,7 +99,7 @@ class HTTPBackend(NCBIBackend):
             return None
 
     def fetch_xml(self, pmid: str, email: str, api_key: str | None = None) -> str | None:
-        """Fetch XML using HTTP API."""
+        """Fetch XML using HTTP API (throttled; retries 429)."""
         url = f"{self.BASE_URL}/efetch.fcgi"
         params = {"db": "pubmed", "id": pmid, "retmode": "xml", "email": email}
 
@@ -75,8 +107,9 @@ class HTTPBackend(NCBIBackend):
             params["api_key"] = api_key
 
         try:
-            response = self.session.get(url, params=params, timeout=30)
-            response.raise_for_status()
+            response = _ncbi_get(self.session, url, params)
+            if response is None:
+                return None
             return response.text
 
         except requests.RequestException as e:
@@ -184,6 +217,7 @@ class NCBIClient:
         """
         self.email = email
         self.api_key = api_key
+        configure_ncbi_throttle(api_key=api_key)
 
         # Select backend
         if use_cli:
@@ -207,7 +241,8 @@ class NCBIClient:
         Returns:
             PMID string if found, None otherwise
         """
-        return self.backend.search_by_doi(doi, self.email, self.api_key)
+        normalized = normalize_doi(doi) or doi
+        return self.backend.search_by_doi(normalized, self.email, self.api_key)
 
     def fetch_reference(self, pmid: str) -> Reference | None:
         """
@@ -224,7 +259,7 @@ class NCBIClient:
         if not xml_string:
             return None
 
-        return self._parse_pubmed_xml(xml_string)
+        return parse_first_pubmed_article(xml_string)
 
     @rate_limited_batch(batch_size=5, sleep_seconds=2.0)
     def fetch_references(self, pmids: list[str]) -> list[Reference]:
@@ -270,140 +305,3 @@ class NCBIClient:
             year_from=year_from,
             year_to=year_to,
         )
-
-    def _parse_pubmed_xml(self, xml_string: str) -> Reference | None:
-        """
-        Parse PubMed XML to Reference model.
-
-        Args:
-            xml_string: XML response from NCBI
-
-        Returns:
-            Reference object if parsing successful, None otherwise
-        """
-        try:
-            root = ET.fromstring(xml_string)
-        except ET.ParseError as e:
-            print(f"  ERROR: XML parse error: {e}")
-            return None
-
-        article = root.find(".//PubmedArticle")
-
-        if article is None:
-            print("  ERROR: No PubmedArticle found in XML")
-            return None
-
-        # Extract PMID
-        pmid_elem = article.find(".//PMID")
-        pmid = pmid_elem.text if pmid_elem is not None else ""
-
-        # Extract DOI
-        doi_elem = article.find(".//ArticleId[@IdType='doi']")
-        doi = doi_elem.text if doi_elem is not None else ""
-
-        # Extract title
-        title_elem = article.find(".//ArticleTitle")
-        title = title_elem.text if title_elem is not None else "No title"
-
-        # Extract authors
-        authors = []
-        author_list = article.findall(".//Author")
-        for author_elem in author_list:
-            last_name_elem = author_elem.find("LastName")
-            first_name_elem = author_elem.find("ForeName")
-            initials_elem = author_elem.find("Initials")
-
-            if last_name_elem is not None:
-                authors.append(
-                    Author(
-                        last_name=last_name_elem.text,
-                        first_name=first_name_elem.text if first_name_elem is not None else None,
-                        initials=initials_elem.text if initials_elem is not None else None,
-                    )
-                )
-
-        # Extract journal info
-        journal_elem = article.find(".//Journal")
-        journal_title = "Unknown"
-        journal_abbr = None
-        volume = None
-        issue = None
-
-        if journal_elem is not None:
-            title_elem = journal_elem.find(".//Title")
-            if title_elem is not None:
-                journal_title = title_elem.text
-
-            abbr_elem = journal_elem.find(".//ISOAbbreviation")
-            if abbr_elem is not None:
-                journal_abbr = abbr_elem.text
-
-            vol_elem = journal_elem.find(".//Volume")
-            if vol_elem is not None:
-                volume = vol_elem.text
-
-            iss_elem = journal_elem.find(".//Issue")
-            if iss_elem is not None:
-                issue = iss_elem.text
-
-        journal = Journal(
-            title=journal_title, abbreviation=journal_abbr, volume=volume, issue=issue
-        )
-
-        # Extract publication date
-        pub_date = None
-        date_elem = article.find(".//PubDate")
-        if date_elem is not None:
-            year_elem = date_elem.find("Year")
-            month_elem = date_elem.find("Month")
-            day_elem = date_elem.find("Day")
-
-            if year_elem is not None:
-                try:
-                    year = int(year_elem.text)
-                    month = self._month_to_int(month_elem.text) if month_elem is not None else 1
-                    day = int(day_elem.text) if day_elem is not None else 1
-                    pub_date = datetime(year=year, month=month, day=day).date()
-                except (ValueError, AttributeError):
-                    pass
-
-        # Extract abstract
-        abstract = None
-        abstract_elem = article.find(".//AbstractText")
-        if abstract_elem is not None:
-            abstract = abstract_elem.text
-
-        # Extract keywords and MeSH terms
-        keywords = [kw.text for kw in article.findall(".//Keyword") if kw.text]
-        mesh_terms = [mesh.text for mesh in article.findall(".//DescriptorName") if mesh.text]
-
-        return Reference(
-            pmid=pmid,
-            doi=doi,
-            title=title,
-            authors=authors,
-            journal=journal,
-            publication_date=pub_date,
-            abstract=abstract,
-            keywords=keywords,
-            mesh_terms=mesh_terms,
-        )
-
-    @staticmethod
-    def _month_to_int(month_str: str) -> int:
-        """Convert month abbreviation to integer."""
-        months = {
-            "Jan": 1,
-            "Feb": 2,
-            "Mar": 3,
-            "Apr": 4,
-            "May": 5,
-            "Jun": 6,
-            "Jul": 7,
-            "Aug": 8,
-            "Sep": 9,
-            "Oct": 10,
-            "Nov": 11,
-            "Dec": 12,
-        }
-        return months.get(month_str, 1)

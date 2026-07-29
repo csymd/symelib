@@ -35,10 +35,16 @@ def rebuild_index(
     if embeddings:
         typer.echo("Embeddings population requested (--embeddings).")
         if reset:
-            typer.echo("  --reset / --clear-embeddings was passed: will remove ALL previous chunks first.")
+            typer.echo(
+                "  --reset / --clear-embeddings was passed: will remove ALL previous chunks first."
+            )
         else:
-            typer.echo("  Will perform smart update (remove old chunks for these papers, then insert fresh ones).")
-        typer.echo("Using stored PDFs for full(ish) text + chunking -> PGVector (needs [agents] + 'make db-up').")
+            typer.echo(
+                "  Will perform smart update (remove old chunks for these papers, then insert fresh ones)."
+            )
+        typer.echo(
+            "Using stored PDFs for full(ish) text + chunking -> PGVector (needs [agents] + 'make db-up')."
+        )
 
         try:
             from elib.agents.index import populate_embeddings
@@ -51,7 +57,9 @@ def rebuild_index(
             typer.echo("Then ensure the DB is up: make db-up")
         except Exception as e:
             typer.echo(f"[red]Embeddings population failed: {e}[/red]")
-            typer.echo("Common causes: Postgres not running (make db-up), missing PDFs on disk, or connection issues.")
+            typer.echo(
+                "Common causes: Postgres not running (make db-up), missing PDFs on disk, or connection issues."
+            )
             # Continue to FTS rebuild so the user still gets something useful
 
     typer.echo("Rebuilding FTS index (SQLite)...")
