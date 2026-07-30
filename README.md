@@ -12,15 +12,15 @@ A local paper (PDF) management system with PubMed/NCBI integration and foundatio
 
 ## Quick Start
 
-Core functionality (PDF processing, search, FTS) works with SQLite today — no containers required.
+Core functionality (PDF processing, search, FTS) with SQLite.
 
 ### Core usage (directory import / processing)
 
-Your AWS-synced library lives at **`~/elibrary`** (`cart/`, `texts/`, plus `library/`, `data/`).
+Your digital library will live at **`~/elibrary`** (`cart/`, `texts/`, plus `library/`, `data/`).
 See **[QUIKSTART.md](QUIKSTART.md)** for the full local layout + PATH fix.
 
 ```bash
-# 1. Install CLI onto PATH (once)
+# 1. Install CLI onto PATH
 cd /path/to/elib
 uv tool install --force --editable .
 export PATH="$HOME/.local/bin:$PATH"   # add to ~/.bashrc if needed
@@ -49,9 +49,4 @@ make db-up
 # (or: podman compose -f compose.yaml up -d postgres)
 ```
 
-See [AGENTS.md](AGENTS.md) for the longer-term agentic vision, [CONTRIBUTING.md](CONTRIBUTING.md) for how to develop and open PRs, [docs/RELEASING.md](docs/RELEASING.md) for release branching/tags (SymWorx-style), and [REFACTOR_PLAN.md](REFACTOR_PLAN.md) for the current stabilization tasks on this branch.
-
-## Status
-On `grok/refactor` branch. Core paths (SQLite + `elib process <directory>`, search, FTS) are fully usable with no containers. The optional agents/RAG path (Postgres + pgvector + Ollama) is now executable end-to-end; see QUICKSTART.md for the complete procedural flow including Silverblue + toolbox details.
-
-See REFACTOR_PLAN.md for the current state of the stabilization work.
+See [AGENTS.md](AGENTS.md) for the longer-term agentic vision, [CONTRIBUTING.md](CONTRIBUTING.md) for how to develop and open PRs, and [docs/RELEASING.md](docs/RELEASING.md) for release branching/tags (SymWorx-style).

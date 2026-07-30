@@ -53,7 +53,6 @@ ignore = [
     "E501",    # line length — formatter
     "B008",    # function calls in defaults (Typer/FastAPI pattern)
     "C901",    # complexity
-    "PLR0913", # too many arguments
     "PLR0912", # too many branches
     "PLR0915", # too many statements
     "PLR0911", # too many return statements
@@ -83,6 +82,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "tests/**/*.py" = [
     "S101",
     "ARG",
+    "PLR0913",
     "PLR2004",
     "B017",   # pytest.raises(Exception) in some tests
     "E402",   # local imports in test helpers
