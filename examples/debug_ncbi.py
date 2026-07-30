@@ -9,8 +9,8 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from elib.services.ncbi_client import NCBIClient
-from elib.utils.config import Config
+from symworx_elibrary.services.ncbi_client import NCBIClient
+from symworx_elibrary.utils.config import Config
 
 
 def test_dois():

@@ -87,14 +87,14 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "B017",   # pytest.raises(Exception) in some tests
     "E402",   # local imports in test helpers
 ]
-"src/elib/migrations/**/*.py" = ["E402", "ARG"]
-"src/elib/cli/**/*.py" = ["ARG001"]  # Typer injects unused ctx sometimes
+"src/symworx_elibrary/migrations/**/*.py" = ["E402", "ARG"]
+"src/symworx_elibrary/cli/**/*.py" = ["ARG001"]  # Typer injects unused ctx sometimes
 
 [lint.mccabe]
 max-complexity = 10
 
 [lint.isort]
-known-first-party = ["elib"]
+known-first-party = ["symworx_elibrary"]
 force-sort-within-sections = true
 split-on-trailing-comma = true
 

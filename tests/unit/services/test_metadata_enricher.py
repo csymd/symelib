@@ -6,10 +6,10 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from elib.models.metadata import MetadataSource, MetadataStatus
-from elib.models.reference import Author, Journal, Reference
-from elib.services.db_manager import DatabaseManager
-from elib.services.metadata_enricher import MetadataEnricher
+from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus
+from symworx_elibrary.models.reference import Author, Journal, Reference
+from symworx_elibrary.services.db_manager import DatabaseManager
+from symworx_elibrary.services.metadata_enricher import MetadataEnricher
 
 
 def _ref(**kw) -> Reference:
@@ -59,7 +59,7 @@ def test_enrich_falls_back_to_crossref():
 
 
 def test_enrich_local_fallback():
-    from elib.models.metadata import MetadataIssue
+    from symworx_elibrary.models.metadata import MetadataIssue
 
     ncbi = MagicMock()
     ncbi.search_by_doi.return_value = None
@@ -82,7 +82,7 @@ def test_enrich_local_fallback():
 
 
 def test_enrich_no_text_issue():
-    from elib.models.metadata import MetadataIssue
+    from symworx_elibrary.models.metadata import MetadataIssue
 
     ncbi = MagicMock()
     crossref = MagicMock()

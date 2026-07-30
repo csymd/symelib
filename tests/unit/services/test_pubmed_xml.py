@@ -2,7 +2,7 @@
 tests/unit/services/test_pubmed_xml.py
 """
 
-from elib.services.pubmed_xml import parse_first_pubmed_article, parse_pubmed_xml
+from symworx_elibrary.services.pubmed_xml import parse_first_pubmed_article, parse_pubmed_xml
 
 STRUCTURED_ABSTRACT_XML = """<?xml version="1.0"?>
 <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2024//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_240101.dtd">

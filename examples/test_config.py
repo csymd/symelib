@@ -6,7 +6,7 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from elib.utils.config import Config
+from symworx_elibrary.utils.config import Config
 
 print("Testing config loading...")
 print(f"Looking for config in: {Path.cwd()}")

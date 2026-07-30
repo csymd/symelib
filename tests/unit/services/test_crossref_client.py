@@ -2,7 +2,7 @@
 tests/unit/services/test_crossref_client.py
 """
 
-from elib.services.crossref_client import crossref_message_to_reference
+from symworx_elibrary.services.crossref_client import crossref_message_to_reference
 
 SAMPLE_MESSAGE = {
     "DOI": "10.1038/nature12373",

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from elib.models.metadata import MetadataSource, MetadataStatus, SearchQuery
-from elib.models.reference import Author, Journal, Reference
-from elib.services.db_manager import DatabaseManager
+from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus, SearchQuery
+from symworx_elibrary.models.reference import Author, Journal, Reference
+from symworx_elibrary.services.db_manager import DatabaseManager
 
 
 @pytest.fixture
@@ -162,7 +162,7 @@ def test_search_by_status(db: DatabaseManager, tmp_path: Path):
 
 def test_search_prefix_matches_longer_word(db: DatabaseManager, tmp_path: Path):
     """cardio should match cardiovascular (prefix FTS, not exact phrase)."""
-    from elib.models.metadata import SearchField
+    from symworx_elibrary.models.metadata import SearchField
 
     pdf = tmp_path / "cv.pdf"
     pdf.write_bytes(b"%PDF")

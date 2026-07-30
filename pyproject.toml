@@ -1,5 +1,5 @@
 [project]
-name = "elib"
+name = "symworx-elibrary"
 version = "0.1.0"
 description = "Foundation for a local paper management system with agentic capabilities"
 requires-python = ">=3.13"
@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.scripts]
-elib = "elib.main:runner"
+elib = "symworx_elibrary.main:runner"
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -51,7 +51,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-elib = ["tui/*.tcss", "tui/**/*.tcss"]
+symworx_elibrary = ["tui/*.tcss", "tui/**/*.tcss"]
 
 [tool.uv]
 python-preference = "only-managed"

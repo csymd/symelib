@@ -2,7 +2,11 @@
 tests/unit/utils/test_doi_parser.py
 """
 
-from elib.utils.doi_parser import extract_doi_from_text, extract_pmid_from_text, normalize_doi
+from symworx_elibrary.utils.doi_parser import (
+    extract_doi_from_text,
+    extract_pmid_from_text,
+    normalize_doi,
+)
 
 
 def test_normalize_doi_basic():
@@ -37,7 +41,7 @@ def test_extract_pmid_from_text():
 
 
 def test_extract_pmid_from_filename():
-    from elib.utils.doi_parser import extract_pmid_from_filename
+    from symworx_elibrary.utils.doi_parser import extract_pmid_from_filename
 
     assert extract_pmid_from_filename("[15432688 - Journal of Applied Bio.pdf") == "15432688"
     assert (

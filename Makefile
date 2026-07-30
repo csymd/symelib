@@ -52,7 +52,7 @@ db-down:
 
 db-migrate:
 	@echo "db-migrate: Sets up the Postgres vector store for agents/RAG (pgvector extension + data_document_nodes table)."
-	@echo "            See src/elib/migrations/README.md and migration 0001_initial_vector_store."
+	@echo "            See src/symworx_elibrary/migrations/README.md and migration 0001_initial_vector_store."
 	@echo "            Safe to run after 'make db-up'. Uses the same connection as the app."
 	uv run --extra db alembic upgrade head || echo "Note: alembic upgrade encountered an issue (check connection / DATABASE_URL)."
 

@@ -383,76 +383,6 @@ wheels = [
 ]
 
 [[package]]
-name = "elib"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pypdf2" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "textual" },
-    { name = "typer" },
-]
-
-[package.optional-dependencies]
-agents = [
-    { name = "llama-index-core" },
-    { name = "llama-index-embeddings-huggingface" },
-    { name = "llama-index-llms-ollama" },
-    { name = "llama-index-readers-file" },
-    { name = "llama-index-vector-stores-postgres" },
-    { name = "pgvector" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "sqlalchemy" },
-]
-db = [
-    { name = "alembic" },
-    { name = "pgvector" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "sqlalchemy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", marker = "extra == 'db'" },
-    { name = "llama-index-core", marker = "extra == 'agents'", specifier = ">=0.12.0" },
-    { name = "llama-index-embeddings-huggingface", marker = "extra == 'agents'", specifier = ">=0.5.0" },
-    { name = "llama-index-llms-ollama", marker = "extra == 'agents'", specifier = ">=0.5.0" },
-    { name = "llama-index-readers-file", marker = "extra == 'agents'", specifier = ">=0.4.0" },
-    { name = "llama-index-vector-stores-postgres", marker = "extra == 'agents'", specifier = ">=0.4.0" },
-    { name = "pgvector", marker = "extra == 'agents'" },
-    { name = "pgvector", marker = "extra == 'db'" },
-    { name = "psycopg", extras = ["binary"], marker = "extra == 'agents'" },
-    { name = "psycopg", extras = ["binary"], marker = "extra == 'db'" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pypdf2", specifier = ">=3.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "requests", specifier = ">=2.31" },
-    { name = "rich", specifier = ">=13.0" },
-    { name = "sqlalchemy", marker = "extra == 'agents'", specifier = ">=2.0" },
-    { name = "sqlalchemy", marker = "extra == 'db'", specifier = ">=2.0" },
-    { name = "textual", specifier = ">=1.0" },
-    { name = "typer", specifier = ">=0.12" },
-]
-provides-extras = ["db", "agents"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[[package]]
 name = "filelock"
 version = "3.29.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2212,6 +2142,76 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2bb238361cd4ae6125a569b4db67cd9e79846ba2d68c/sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517", size = 7793921, upload-time = "2025-04-27T18:05:01.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5", size = 6299353, upload-time = "2025-04-27T18:04:59.103Z" },
+]
+
+[[package]]
+name = "symworx-elibrary"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pypdf2" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "textual" },
+    { name = "typer" },
+]
+
+[package.optional-dependencies]
+agents = [
+    { name = "llama-index-core" },
+    { name = "llama-index-embeddings-huggingface" },
+    { name = "llama-index-llms-ollama" },
+    { name = "llama-index-readers-file" },
+    { name = "llama-index-vector-stores-postgres" },
+    { name = "pgvector" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "sqlalchemy" },
+]
+db = [
+    { name = "alembic" },
+    { name = "pgvector" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "sqlalchemy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", marker = "extra == 'db'" },
+    { name = "llama-index-core", marker = "extra == 'agents'", specifier = ">=0.12.0" },
+    { name = "llama-index-embeddings-huggingface", marker = "extra == 'agents'", specifier = ">=0.5.0" },
+    { name = "llama-index-llms-ollama", marker = "extra == 'agents'", specifier = ">=0.5.0" },
+    { name = "llama-index-readers-file", marker = "extra == 'agents'", specifier = ">=0.4.0" },
+    { name = "llama-index-vector-stores-postgres", marker = "extra == 'agents'", specifier = ">=0.4.0" },
+    { name = "pgvector", marker = "extra == 'agents'" },
+    { name = "pgvector", marker = "extra == 'db'" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'agents'" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'db'" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pypdf2", specifier = ">=3.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "requests", specifier = ">=2.31" },
+    { name = "rich", specifier = ">=13.0" },
+    { name = "sqlalchemy", marker = "extra == 'agents'", specifier = ">=2.0" },
+    { name = "sqlalchemy", marker = "extra == 'db'", specifier = ">=2.0" },
+    { name = "textual", specifier = ">=1.0" },
+    { name = "typer", specifier = ">=0.12" },
+]
+provides-extras = ["db", "agents"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
 ]
 
 [[package]]

@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import elib.utils.open_file as open_file_mod
-from elib.utils.open_file import (
+import symworx_elibrary.utils.open_file as open_file_mod
+from symworx_elibrary.utils.open_file import (
     _build_cmd,
     _file_url,
     _resolve_viewer_spec,

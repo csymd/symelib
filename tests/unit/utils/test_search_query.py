@@ -2,8 +2,8 @@
 tests/unit/utils/test_search_query.py
 """
 
-from elib.models.metadata import SearchField
-from elib.utils.search_query import build_fts_match
+from symworx_elibrary.models.metadata import SearchField
+from symworx_elibrary.utils.search_query import build_fts_match
 
 
 def test_prefix_single_token():

@@ -4,7 +4,7 @@ tests/unit/models/test_reference.py
 
 from datetime import date
 
-from elib.models.reference import Author, Journal, Reference
+from symworx_elibrary.models.reference import Author, Journal, Reference
 
 
 # Test for Author model

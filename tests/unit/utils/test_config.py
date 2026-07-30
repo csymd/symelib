@@ -4,7 +4,7 @@ tests/unit/utils/test_config.py
 
 from pathlib import Path
 
-from elib.utils.config import Config, default_config_candidates, get_elib_home
+from symworx_elibrary.utils.config import Config, default_config_candidates, get_elib_home
 
 
 def test_get_elib_home_default(monkeypatch):
@@ -18,8 +18,18 @@ def test_get_elib_home_env(monkeypatch, tmp_path):
 
 
 def test_load_from_explicit_path(tmp_path, monkeypatch):
-    monkeypatch.delenv("ELIB_CONFIG", raising=False)
-    monkeypatch.delenv("ELIB_DATABASE_PATH", raising=False)
+    # Clear env overrides so YAML values are what Config.load applies.
+    for key in (
+        "ELIB_CONFIG",
+        "ELIB_DATABASE_PATH",
+        "ELIB_NCBI_EMAIL",
+        "ELIB_NCBI_API_KEY",
+        "ELIB_TARGET_DIRECTORY",
+        "ELIB_EXPORTS_DIRECTORY",
+        "ELIB_TEMP_DIRECTORY",
+        "ELIB_PDF_VIEWER",
+    ):
+        monkeypatch.delenv(key, raising=False)
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text(
         "ncbi_email: test@example.com\n"
@@ -37,6 +47,14 @@ def test_load_from_explicit_path(tmp_path, monkeypatch):
 
 def test_expand_tilde(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
+    for key in (
+        "ELIB_NCBI_EMAIL",
+        "ELIB_DATABASE_PATH",
+        "ELIB_TARGET_DIRECTORY",
+        "ELIB_EXPORTS_DIRECTORY",
+        "ELIB_TEMP_DIRECTORY",
+    ):
+        monkeypatch.delenv(key, raising=False)
     # re-import not needed; expanduser uses HOME
     cfg_file = tmp_path / "c.yaml"
     cfg_file.write_text(

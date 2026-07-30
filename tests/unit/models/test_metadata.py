@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import ValidationError
 import pytest
 
-from elib.models.metadata import (
+from symworx_elibrary.models.metadata import (
     DocumentMetadata,
     MetadataSource,
     MetadataStatus,

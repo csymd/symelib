@@ -78,14 +78,14 @@ Runtime layout for day-to-day use (cart → library → SQLite) is documented in
 
 | Area | Path | Notes |
 |------|------|--------|
-| CLI entrypoints | `src/elib/cli/` | Typer commands wired from `main.py` |
-| Models | `src/elib/models/` | Documents, metadata status, paper lists |
-| Services | `src/elib/services/` | NCBI, Crossref, PDF process, enrich, BibTeX |
-| SQLite layer | `src/elib/services/db/` | Schema, documents, lists; facade via `db_manager` |
-| TUI | `src/elib/tui/` | Textual app + screens + `elib.tcss` |
-| Config / utils | `src/elib/utils/` | Config, rate limits, open PDF, search query |
+| CLI entrypoints | `src/symworx_elibrary/cli/` | Typer commands wired from `main.py` |
+| Models | `src/symworx_elibrary/models/` | Documents, metadata status, paper lists |
+| Services | `src/symworx_elibrary/services/` | NCBI, Crossref, PDF process, enrich, BibTeX |
+| SQLite layer | `src/symworx_elibrary/services/db/` | Schema, documents, lists; facade via `db_manager` |
+| TUI | `src/symworx_elibrary/tui/` | Textual app + screens + `elib.tcss` |
+| Config / utils | `src/symworx_elibrary/utils/` | Config, rate limits, open PDF, search query |
 | Tests | `tests/unit/`, `tests/functional/` | Prefer unit tests for logic; functional for TUI flows |
-| Optional agents | `src/elib/agents/`, `migrations/`, `compose.yaml` | Postgres + pgvector extras |
+| Optional agents | `src/symworx_elibrary/agents/`, `migrations/`, `compose.yaml` | Postgres + pgvector extras |
 
 User data and secrets live **outside** the repo (typically `~/elibrary/` and `~/.config/elib/env`). Never commit PDFs, SQLite DBs, API keys, or personal `config.yaml` with real credentials.
 

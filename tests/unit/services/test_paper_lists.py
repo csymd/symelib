@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from elib.models.metadata import MetadataSource, MetadataStatus
-from elib.models.reference import Author, Journal, Reference
-from elib.services.bibtex import citation_key, document_to_bibtex, documents_to_bibtex
-from elib.services.db_manager import DatabaseManager
+from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus
+from symworx_elibrary.models.reference import Author, Journal, Reference
+from symworx_elibrary.services.bibtex import citation_key, document_to_bibtex, documents_to_bibtex
+from symworx_elibrary.services.db_manager import DatabaseManager
 
 
 @pytest.fixture

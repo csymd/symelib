@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 import pytest
 
-from elib.models.document import (
+from symworx_elibrary.models.document import (
     DOI,
     PDFDocument,
     ProcessedDocument,

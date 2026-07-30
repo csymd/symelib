@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pytest
 
-from elib.models.metadata import MetadataSource, MetadataStatus
-from elib.models.reference import Author, Journal, Reference
-from elib.services.db_manager import DatabaseManager
-from elib.tui.app import ElibApp
-from elib.tui.screens.detail import DetailScreen
-from elib.tui.screens.library import LibraryScreen
-from elib.tui.screens.lists import ListDetailScreen, ListsScreen
-from elib.utils.config import Config
+from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus
+from symworx_elibrary.models.reference import Author, Journal, Reference
+from symworx_elibrary.services.db_manager import DatabaseManager
+from symworx_elibrary.tui.app import ElibApp
+from symworx_elibrary.tui.screens.detail import DetailScreen
+from symworx_elibrary.tui.screens.library import LibraryScreen
+from symworx_elibrary.tui.screens.lists import ListDetailScreen, ListsScreen
+from symworx_elibrary.utils.config import Config
 
 
 @pytest.fixture

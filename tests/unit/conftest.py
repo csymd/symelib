@@ -14,7 +14,7 @@ import pytest
 @pytest.fixture
 def logger():
     """Provide a test logger."""
-    from elib.utils.logging import eLibLogger
+    from symworx_elibrary.utils.logging import eLibLogger
 
     return eLibLogger(name="test", level="DEBUG")
 
@@ -34,7 +34,7 @@ def capture_logs(monkeypatch):
 @pytest.fixture(autouse=True)
 def reset_logger():
     """Reset global logger instance between tests."""
-    import elib.utils.logging as logging_module
+    import symworx_elibrary.utils.logging as logging_module
 
     logging_module._logger_instance = None
     yield
