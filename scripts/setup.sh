@@ -205,8 +205,8 @@ data.setdefault("cart_directory", str(home / "cart"))
 data.setdefault("texts_directory", str(home / "texts"))
 data.setdefault("exports_directory", str(home / "exports"))
 data.setdefault("temp_directory", str(home / "tmp"))
-# Drop legacy personal bucket defaults if present
-if data.get("s3_bucket") in (None, "", "bitterbeta-useast1-elibrary-landing-dev"):
+# Drop empty S3 bucket defaults if present
+if data.get("s3_bucket") in (None, ""):
     data.pop("s3_bucket", None)
 
 if yaml:

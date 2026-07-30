@@ -45,7 +45,7 @@ _DOCUMENTS_EXTRA_COLUMNS: list[tuple[str, str]] = [
 class DocumentsMixin:
     """Document CRUD, search, diagnostics queries."""
 
-    def add_document(
+    def add_document(  # noqa: PLR0913
         self,
         reference: Reference,
         file_path: Path,

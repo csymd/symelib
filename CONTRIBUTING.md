@@ -28,7 +28,7 @@ AI should be treated as a helpful collaborator — **you** remain responsible fo
 
 - **Submit an Issue** – Report bugs, request features, or suggest improvements.
 - **Submit a Pull Request (PR)** – From small documentation fixes to major new functionality.
-- **Improve Documentation** – Keep [README.md](README.md), [QUIKSTART.md](QUIKSTART.md), and setup flows accurate.
+- **Improve Documentation** – Keep [README.md](README.md), [QUICKSTART.md](QUICKSTART.md), and setup flows accurate.
 - **Write Tests** – Strengthen coverage for models, DB, search, enrichers, and TUI behavior.
 - **Review Pull Requests** – Provide constructive feedback to help maintain quality.
 
@@ -72,7 +72,7 @@ If you see something that needs fixing, feel free to open a PR directly—no nee
    Hooks auto-fix formatting when possible; re-stage and commit again if they modify files.
    Emergency skip (rare): `git commit --no-verify`.
 
-Runtime layout for day-to-day use (cart → library → SQLite) is documented in [QUIKSTART.md](QUIKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
+Runtime layout for day-to-day use (cart → library → SQLite) is documented in [QUICKSTART.md](QUICKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
 
 ## Project layout (where to work)
 
@@ -102,7 +102,7 @@ User data and secrets live **outside** the repo (typically `~/elibrary/` and `~/
 
 - **Keep PRs focused** — one logical change per PR is strongly preferred; larger refactors should be called out clearly.
 - **Include tests** when adding or modifying functionality.
-- **Update documentation** when behavior or setup changes (README / QUIKSTART / help text).
+- **Update documentation** when behavior or setup changes (README / QUICKSTART / help text).
 - **Follow the Code of Conduct** in all interactions.
 - Be prepared to address review feedback and iterate until the PR is ready to merge.
 
@@ -123,7 +123,7 @@ By participating, you agree to uphold this code in all project spaces.
 ## Questions or Need Help?
 
 - Open an **Issue** or **Discussion** in the repository.
-- For local setup friction (toolbox, PATH, NCBI), start from [QUIKSTART.md](QUIKSTART.md) and `elib setup`.
+- For local setup friction (toolbox, PATH, NCBI), start from [QUICKSTART.md](QUICKSTART.md) and `elib setup`.
 
 ---
 

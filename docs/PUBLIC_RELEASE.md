@@ -36,7 +36,7 @@ Checklist for publishing this repository without leaking personal or sensitive d
 |------|--------|-------|
 | `.gitignore` | Add: `config.yaml`, `.env`, `.env.*`, `data/`, `*.db`, `*.db-*`, `exports/`, `examples/output/`, maybe `library/` | ✅ |
 | Example config | Commit `config.example.yaml` with all keys documented, no real secrets | ✅ |
-| Setup docs | Point README/QUIKSTART at `elib setup` / `make setup` | partial |
+| Setup docs | Point README/QUICKSTART at `elib setup` / `make setup` | partial |
 | License | Confirm LICENSE file is intentional for public use | ✅ Apache-2.0 |
 | No private PDFs | Ensure no paper PDFs or `elibrary` data are tracked | ✅ |
 

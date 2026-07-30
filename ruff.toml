@@ -88,7 +88,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "E402",   # local imports in test helpers
 ]
 "src/symworx_elibrary/migrations/**/*.py" = ["E402", "ARG"]
-"src/symworx_elibrary/cli/**/*.py" = ["ARG001"]  # Typer injects unused ctx sometimes
+"src/symworx_elibrary/cli/**/*.py" = ["ARG001", "PLR0913"]  # Typer injects unused ctx; CLI cmds take many options
 
 [lint.mccabe]
 max-complexity = 10

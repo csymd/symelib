@@ -17,7 +17,7 @@ Core functionality (PDF processing, search, FTS) with SQLite.
 ### Core usage (directory import / processing)
 
 Your digital library will live at **`~/elibrary`** (`cart/`, `texts/`, plus `library/`, `data/`).
-See **[QUIKSTART.md](QUIKSTART.md)** for the full local layout + PATH fix.
+See **[QUICKSTART.md](QUICKSTART.md)** for the full local layout + PATH fix.
 
 ```bash
 # 1. Install CLI onto PATH

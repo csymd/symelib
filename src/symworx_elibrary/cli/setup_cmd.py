@@ -136,12 +136,8 @@ def setup(
     data["temp_directory"] = str(data.get("temp_directory") or home / "tmp")
     if resolved_viewer:
         data["pdf_viewer"] = resolved_viewer
-    # Drop legacy personal defaults if present with no override intent
-    if data.get("s3_bucket") in (
-        None,
-        "",
-        "bitterbeta-useast1-elibrary-landing-dev",
-    ):
+    # Drop empty S3 bucket defaults if present with no override intent
+    if data.get("s3_bucket") in (None, ""):
         data.pop("s3_bucket", None)
     if not data.get("rclone_remote"):
         data.pop("rclone_remote", None)

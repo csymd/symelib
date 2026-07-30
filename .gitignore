@@ -213,6 +213,9 @@ notes.org
 TODO.org
 NOTES.org
 
+# Accidental local binaries / tools (never commit)
+transmute
+
 # VS Code (in case collaborators use it)
 .vscode/
 *.code-workspace
