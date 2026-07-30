@@ -37,5 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Links
 
-[Unreleased]: https://github.com/bitterbeta/elib/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/bitterbeta/elib/releases/tag/v0.1.0
+[Unreleased]: https://github.com/symworx/symworx-elibrary/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/symworx/symworx-elibrary/releases/tag/v0.1.0
