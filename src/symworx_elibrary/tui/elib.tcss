@@ -129,7 +129,7 @@ ModalScreen {
     background: rgba(0, 0, 0, 0.55);
 }
 
-#add-list-dialog, #create-list-dialog {
+#add-list-dialog, #create-list-dialog, #edit-meta-dialog {
     width: 64;
     height: auto;
     max-height: 80%;
@@ -256,7 +256,8 @@ App.theme-light ModalScreen {
 }
 
 App.theme-light #add-list-dialog,
-App.theme-light #create-list-dialog {
+App.theme-light #create-list-dialog,
+App.theme-light #edit-meta-dialog {
     border: solid #7a4e22;
     background: #fffdf8;
     color: #2a2218;
