@@ -72,7 +72,7 @@ If you see something that needs fixing, feel free to open a PR directly—no nee
    Hooks auto-fix formatting when possible; re-stage and commit again if they modify files.
    Emergency skip (rare): `git commit --no-verify`.
 
-Runtime layout for day-to-day use (cart → library → SQLite) is documented in [QUICKSTART.md](QUICKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
+Runtime layout for day-to-day use (tmp then cart → library → SQLite) is documented in [QUICKSTART.md](QUICKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
 
 ## Project layout (where to work)
 

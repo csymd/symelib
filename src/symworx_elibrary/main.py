@@ -10,6 +10,7 @@ import typer
 
 from symworx_elibrary.cli.agent import agent
 from symworx_elibrary.cli.check_metadata import check_metadata
+from symworx_elibrary.cli.edit import edit
 from symworx_elibrary.cli.enrich import enrich
 from symworx_elibrary.cli.list_cmd import list_app
 from symworx_elibrary.cli.process import process
@@ -32,6 +33,7 @@ app.command(name="process")(process)
 app.command(name="rebuild-index")(rebuild_index)
 app.command(name="check-metadata")(check_metadata)
 app.command(name="enrich")(enrich)
+app.command(name="edit")(edit)
 app.add_typer(list_app, name="list")
 app.command(name="tui")(tui)
 app.command(name="agent")(agent)

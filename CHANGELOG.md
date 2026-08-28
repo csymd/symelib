@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `elib process` default inbox sequence: `~/elibrary/tmp` then `~/elibrary/cart` (`--from tmp|cart|all`).
+- Filter by import date: `elib search --added-from/--added-to/--added-since`; TUI `i` cycles all/today/7d/30d.
+- Manual author/year edits: `elib edit --id/--doi --author --year`; TUI `e` (marks `metadata_source=manual`).
 - Textual TUI: library search, detail, named paper lists, PDF open (Papers / configurable viewer).
 - Metadata pipeline: PubMed primary → Crossref fallback → honest local status tracking.
 - Paper lists: create, rename, soft-delete/restore, BibTeX export (`elib list`, TUI `l` / `m`).
