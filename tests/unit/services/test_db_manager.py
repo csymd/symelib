@@ -3,11 +3,18 @@ tests/unit/services/test_db_manager.py
 """
 
 from datetime import date
+import json
 from pathlib import Path
 
 import pytest
 
-from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus, SearchQuery
+from symworx_elibrary.models.metadata import (
+    MetadataSource,
+    MetadataStatus,
+    SearchField,
+    SearchQuery,
+    SortBy,
+)
 from symworx_elibrary.models.reference import Author, Journal, Reference
 from symworx_elibrary.services.db_manager import DatabaseManager
 
@@ -76,6 +83,45 @@ def test_add_strips_synthetic_doi(db: DatabaseManager, tmp_path: Path):
     assert meta.pmid is None
     assert meta.metadata_status == MetadataStatus.fallback
     assert db.get_by_doi("10.9999/elib-local-1") is None
+
+
+def test_update_document_fields_authors_and_year(db: DatabaseManager, tmp_path: Path):
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF")
+    doc_id = db.add_document(
+        _ref(),
+        file_path=pdf,
+        filename=pdf.name,
+        file_size=4,
+        metadata_status=MetadataStatus.complete,
+        metadata_source=MetadataSource.pubmed,
+    )
+    updated = db.update_document_fields(
+        doc_id,
+        authors=[Author(last_name="Curie", first_name="Marie", initials="M")],
+        publication_year=1898,
+    )
+    assert updated is not None
+    assert updated.publication_year == 1898
+    assert json.loads(updated.authors_json)[0]["last_name"] == "Curie"
+    assert updated.metadata_source == MetadataSource.manual
+
+    hits = db.search(SearchQuery(text="Curie", search_field=SearchField.author))
+    assert len(hits) == 1
+    assert hits[0].metadata.id == doc_id
+
+    cleared = db.update_document_fields(doc_id, clear_year=True)
+    assert cleared is not None
+    assert cleared.publication_year is None
+    assert json.loads(cleared.authors_json)[0]["last_name"] == "Curie"
+
+
+def test_update_document_fields_rejects_bad_year(db: DatabaseManager, tmp_path: Path):
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF")
+    doc_id = db.add_document(_ref(), file_path=pdf, filename=pdf.name, file_size=4)
+    with pytest.raises(ValueError, match="Year must be"):
+        db.update_document_fields(doc_id, publication_year=99)
 
 
 def test_update_document_metadata(db: DatabaseManager, tmp_path: Path):
@@ -286,6 +332,52 @@ def test_unique_doi_constraint(db: DatabaseManager, tmp_path: Path):
     db.add_document(_ref(), file_path=pdf1, filename="1.pdf", file_size=4)
     with pytest.raises(Exception):
         db.add_document(_ref(), file_path=pdf2, filename="2.pdf", file_size=4)
+
+
+def _set_added_date(db: DatabaseManager, doc_id: int, when: str) -> None:
+    with db.get_connection() as conn:
+        conn.execute("UPDATE documents SET added_date = ? WHERE id = ?", (when, doc_id))
+        conn.commit()
+
+
+def test_filter_by_added_date(db: DatabaseManager, tmp_path: Path):
+    ids = []
+    for i, stamp in enumerate(
+        ("2026-01-15 12:00:00", "2026-08-20 09:00:00", "2026-08-28 18:00:00")
+    ):
+        pdf = tmp_path / f"added{i}.pdf"
+        pdf.write_bytes(b"%PDF")
+        doc_id = db.add_document(
+            _ref(doi=f"10.1/added.{i}", pmid=str(2000 + i), title=f"Imported {i}"),
+            file_path=pdf,
+            filename=pdf.name,
+            file_size=4,
+            metadata_status=MetadataStatus.complete,
+            metadata_source=MetadataSource.pubmed,
+        )
+        _set_added_date(db, doc_id, stamp)
+        ids.append(doc_id)
+
+    listed = db.list_documents(added_from=date(2026, 8, 1), added_to=date(2026, 8, 31))
+    assert {d.id for d in listed} == {ids[1], ids[2]}
+
+    from_only = db.list_documents(added_from=date(2026, 8, 28))
+    assert [d.id for d in from_only] == [ids[2]]
+
+    to_only = db.list_documents(added_to=date(2026, 1, 15))
+    assert [d.id for d in to_only] == [ids[0]]
+
+    hits = db.search(
+        SearchQuery(
+            added_from=date(2026, 8, 20),
+            added_to=date(2026, 8, 20),
+            sort_by=SortBy.added_date,
+        )
+    )
+    assert [r.metadata.id for r in hits] == [ids[1]]
+
+    none = db.list_documents(added_from=date(2025, 1, 1), added_to=date(2025, 12, 31))
+    assert none == []
 
 
 def test_multiple_empty_dois_allowed(db: DatabaseManager, tmp_path: Path):

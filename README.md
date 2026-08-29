@@ -16,7 +16,7 @@ Core functionality (PDF processing, search, FTS) with SQLite.
 
 ### Core usage (directory import / processing)
 
-Your digital library will live at **`~/elibrary`** (`cart/`, `texts/`, plus `library/`, `data/`).
+Your digital library will live at **`~/elibrary`** (`tmp/`, `cart/`, `texts/`, plus `library/`, `data/`).
 See **[QUICKSTART.md](QUICKSTART.md)** for the full local layout + PATH fix.
 
 ```bash
@@ -27,12 +27,16 @@ export PATH="$HOME/.local/bin:$PATH"   # add to ~/.bashrc if needed
 
 # 2. Config: elib setup  →  ~/elibrary/config.yaml (see config.example.yaml)
 
-# 3. Process inbox cart → library (start small — cart is large)
+# 3. Process inboxes → library (tmp first, then cart; start small — cart is large)
 elib process --limit 20
+# or: elib process --from tmp
 # or: elib process ~/elibrary/cart --limit 50
 
 # 4. Search / audit / TUI / lists
 elib search "CRISPR oncology"
+elib search --added-since 7d
+elib search --added-from 2026-08-01 --added-to 2026-08-28
+elib edit --id 42 --author "Smith, Ada" --year 2021
 elib check-metadata
 elib enrich
 elib stats

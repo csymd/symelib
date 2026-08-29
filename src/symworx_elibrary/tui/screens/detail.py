@@ -9,9 +9,15 @@ from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import VerticalScroll
-from textual.screen import Screen
-from textual.widgets import Static
+from textual.containers import Vertical, VerticalScroll
+from textual.screen import ModalScreen, Screen
+from textual.widgets import Input, Label, Static
+
+from symworx_elibrary.utils.authors import (
+    format_authors_editable,
+    parse_authors_editable,
+    validate_publication_year,
+)
 
 if TYPE_CHECKING:
     from symworx_elibrary.tui.app import ElibApp
@@ -29,6 +35,7 @@ class DetailScreen(Screen):
         Binding("escape", "go_back", "Back", show=True),
         Binding("b", "go_back", "Back", show=False),
         Binding("o", "open_pdf", "PDF", show=True),
+        Binding("e", "edit_metadata", "Edit", show=True),
         Binding("a", "add_to_list", "List+", show=True),
         Binding("enter", "open_pdf", "PDF", show=False),
         Binding("t", "app.toggle_theme", "Theme", show=True),
@@ -49,7 +56,9 @@ class DetailScreen(Screen):
             "[bold]elib[/]  [cyan]detail[/]                     [dim]Esc back · Ctrl+Q quit[/]",
             id="app-header",
         )
-        yield Static("  o open PDF  ·  a add to list  ·  Esc back", id="action-bar")
+        yield Static(
+            "  e edit authors/year  ·  o open PDF  ·  a add to list  ·  Esc back", id="action-bar"
+        )
         with VerticalScroll(id="detail-scroll"):
             yield Static("", id="detail-title")
             yield Static("", id="detail-meta")
@@ -62,7 +71,7 @@ class DetailScreen(Screen):
 
     def on_mount(self) -> None:
         self.app.clear_esc_quit()
-        self.app.set_action_bar("o open PDF  ·  a add to list  ·  Esc back")
+        self.app.set_action_bar("e edit authors/year  ·  o open PDF  ·  a add to list  ·  Esc back")
         self._load()
 
     def _load(self) -> None:
@@ -161,6 +170,14 @@ class DetailScreen(Screen):
             first[:180], severity="information" if ok else "error", timeout=8 if not ok else 3
         )
 
+    def action_edit_metadata(self) -> None:
+        self.app.clear_esc_quit()
+        self.app.push_screen(EditMetadataModal(self.document_id), self._after_edit)
+
+    def _after_edit(self, changed: bool | None) -> None:
+        if changed:
+            self._load()
+
     def action_add_to_list(self) -> None:
         from symworx_elibrary.tui.screens.library import AddToListModal
 
@@ -174,3 +191,87 @@ class DetailScreen(Screen):
                 self.action_open_pdf()
         except Exception:
             pass
+
+
+class EditMetadataModal(ModalScreen[bool | None]):
+    """Edit authors and publication year; returns True if saved."""
+
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel", show=True),
+    ]
+
+    def __init__(self, document_id: int) -> None:
+        super().__init__()
+        self.document_id = document_id
+
+    @property
+    def app(self) -> ElibApp:  # type: ignore[override]
+        return super().app  # type: ignore[return-value]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="edit-meta-dialog"):
+            yield Label("Edit authors and year", id="dialog-title")
+            yield Static("", id="edit-doc-title")
+            yield Input(placeholder="Last, First; Last2, First2", id="edit-authors-input")
+            yield Input(placeholder="Year (YYYY, empty to clear)", id="edit-year-input")
+            yield Static(
+                "Last, First; …  ·  enter save  ·  esc cancel",
+                id="dialog-help",
+            )
+
+    def on_mount(self) -> None:
+        doc = self.app.db.get_by_id(self.document_id)
+        if doc is None:
+            self.notify("Document not found", severity="error")
+            self.dismiss(None)
+            return
+        self.query_one("#edit-doc-title", Static).update((doc.title or "")[:80])
+        authors_inp = self.query_one("#edit-authors-input", Input)
+        authors_inp.value = format_authors_editable(doc.authors_json)
+        year_inp = self.query_one("#edit-year-input", Input)
+        year_inp.value = str(doc.publication_year) if doc.publication_year else ""
+        authors_inp.focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id in ("edit-authors-input", "edit-year-input"):
+            self._save()
+
+    def _save(self) -> None:
+        raw_authors = self.query_one("#edit-authors-input", Input).value
+        raw_year = self.query_one("#edit-year-input", Input).value.strip()
+        try:
+            authors = parse_authors_editable(raw_authors)
+        except ValueError as e:
+            self.notify(str(e), severity="warning")
+            return
+
+        clear_year = raw_year == ""
+        year: int | None = None
+        if not clear_year:
+            if not raw_year.isdigit():
+                self.notify("Year must be a 4-digit number (YYYY)", severity="warning")
+                return
+            try:
+                year = validate_publication_year(int(raw_year))
+            except ValueError as e:
+                self.notify(str(e), severity="warning")
+                return
+
+        try:
+            updated = self.app.db.update_document_fields(
+                self.document_id,
+                authors=authors,
+                publication_year=year,
+                clear_year=clear_year,
+            )
+        except ValueError as e:
+            self.notify(str(e), severity="error")
+            return
+        if updated is None:
+            self.notify("Update failed", severity="error")
+            return
+        self.notify("Saved authors and year", severity="information")
+        self.dismiss(True)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)

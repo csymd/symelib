@@ -4,7 +4,7 @@ SQLite persistence for elib (split package).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 import json
 from pathlib import Path
 import sqlite3
@@ -19,12 +19,14 @@ from symworx_elibrary.models.metadata import (
     SearchResult,
     SortBy,
     SortOrder,
+    added_date_sql_filter,
     classify_metadata_status,
     is_synthetic_doi,
     is_synthetic_pmid,
     sort_sql_clause,
 )
-from symworx_elibrary.models.reference import Reference
+from symworx_elibrary.models.reference import Author, Reference
+from symworx_elibrary.utils.authors import validate_publication_year
 from symworx_elibrary.utils.logging import LoggerConfig, get_shared_logger
 from symworx_elibrary.utils.search_query import build_fts_match
 
@@ -289,8 +291,84 @@ class DocumentsMixin:
 
         return self.get_by_id(doc_id)
 
+    def update_document_fields(
+        self,
+        doc_id: int,
+        *,
+        authors: list[Author] | None = None,
+        publication_year: int | None = None,
+        clear_year: bool = False,
+    ) -> DocumentMetadata | None:
+        """Patch author list and/or publication year; mark source as manual.
+
+        Omitting a field leaves it unchanged. ``clear_year`` sets publication_year
+        to NULL. Does not rename the PDF on disk.
+        """
+        if authors is None and publication_year is None and not clear_year:
+            return self.get_by_id(doc_id)
+
+        if publication_year is not None and clear_year:
+            raise ValueError("Pass publication_year or clear_year, not both")
+        if publication_year is not None:
+            publication_year = validate_publication_year(publication_year)
+
+        current = self.get_by_id(doc_id)
+        if current is None:
+            return None
+
+        if authors is not None:
+            authors_json = json.dumps([a.model_dump() for a in authors])
+        else:
+            authors_json = current.authors_json
+
+        if clear_year:
+            year: int | None = None
+        elif publication_year is not None:
+            year = publication_year
+        else:
+            year = current.publication_year
+
+        status = classify_metadata_status(
+            doi=current.doi,
+            pmid=current.pmid,
+            title=current.title,
+            authors_json=authors_json,
+            abstract=current.abstract,
+        )
+        checked_at = datetime.now()
+
+        with self.get_connection() as conn:
+            conn.execute(
+                """
+                UPDATE documents SET
+                    authors_json = ?,
+                    publication_year = ?,
+                    metadata_status = ?,
+                    metadata_source = ?,
+                    metadata_checked_at = ?
+                WHERE id = ?
+                """,
+                (
+                    authors_json,
+                    year,
+                    status.value,
+                    MetadataSource.manual.value,
+                    checked_at.isoformat(),
+                    doc_id,
+                ),
+            )
+            conn.commit()
+
+        logger.info(
+            "Manual metadata edit",
+            doc_id=doc_id,
+            authors_changed=authors is not None,
+            year=year,
+        )
+        return self.get_by_id(doc_id)
+
     def get_by_source_path(self, source_path: str) -> DocumentMetadata | None:
-        """Lookup by original cart/inbox path (for skip-on-reprocess)."""
+        """Lookup by original source/inbox path (for skip-on-reprocess)."""
         if not source_path:
             return None
         with self.get_connection() as conn:
@@ -359,11 +437,21 @@ class DocumentsMixin:
         *,
         sort_by: SortBy = SortBy.added_date,
         sort_order: SortOrder = SortOrder.desc,
+        added_from: date | None = None,
+        added_to: date | None = None,
     ) -> list[DocumentMetadata]:
-        """Return documents with optional sort (default: most recently added first)."""
-        # Alias table as d for shared sort_sql_clause
-        sql = "SELECT d.* FROM documents d" + sort_sql_clause(sort_by, sort_order, use_fts=False)
+        """Return documents with optional sort and import-date filter.
+
+        Default sort is most recently added first. ``added_from`` / ``added_to``
+        are inclusive calendar days on ``documents.added_date``.
+        """
+        # Alias table as d for shared sort_sql_clause / added_date_sql_filter
+        sql = "SELECT d.* FROM documents d WHERE 1=1"
         params: list = []
+        clause, extra = added_date_sql_filter(added_from, added_to)
+        sql += clause
+        params.extend(extra)
+        sql += sort_sql_clause(sort_by, sort_order, use_fts=False)
         if limit is not None:
             sql += " LIMIT ?"
             params.append(limit)
@@ -514,6 +602,11 @@ class DocumentsMixin:
         for kw in query.keywords:
             sql += " AND d.keywords_json LIKE ?"
             params.append(f"%{kw}%")
+
+        # Import-date range (inclusive calendar days on documents.added_date)
+        added_clause, added_params = added_date_sql_filter(query.added_from, query.added_to)
+        sql += added_clause
+        params.extend(added_params)
 
         # Sorting (enum-driven only)
         sort_by = query.sort_by or SortBy.added_date

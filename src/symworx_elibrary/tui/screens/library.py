@@ -18,10 +18,12 @@ from textual.widgets import DataTable, Input, Label, Static
 
 from symworx_elibrary.models.metadata import (
     DocumentMetadata,
+    ImportWindow,
     SearchField,
     SearchQuery,
     SortBy,
     SortOrder,
+    import_window_bounds,
 )
 
 if TYPE_CHECKING:
@@ -68,6 +70,13 @@ _SORT_LABEL = {
     SortBy.relevance: "rel",
 }
 
+_IMPORT_CYCLE = (
+    ImportWindow.all,
+    ImportWindow.today,
+    ImportWindow.days_7,
+    ImportWindow.days_30,
+)
+
 
 def _first_author(authors_json: str) -> str:
     if not authors_json or authors_json in ("[]", "null"):
@@ -102,12 +111,15 @@ class LibraryScreen(Screen):
         Binding("escape", "escape", "Esc", show=False, priority=True),
         Binding("enter", "open_detail", "Open", show=True),
         Binding("o", "open_pdf", "PDF", show=True),
+        Binding("e", "edit_metadata", "Edit", show=True),
         Binding("a", "add_to_list", "List+", show=True),
         Binding("l", "open_lists", "Lists", show=True),
         Binding("r", "refresh", "Refresh", show=True),
         Binding("f5", "refresh", "Refresh", show=False),
         Binding("s", "cycle_sort", "Sort", show=True),
         Binding("S", "toggle_sort_order", "Order", show=True),
+        Binding("i", "cycle_import_window", "Imported", show=True),
+        Binding("ctrl+i", "cycle_import_window", "Imported", show=False, priority=True),
         Binding("y", "sort_year", "Year", show=False),
         Binding("u", "sort_author", "Author", show=False),
         Binding("t", "app.toggle_theme", "Theme", show=True),
@@ -121,6 +133,7 @@ class LibraryScreen(Screen):
         self._search_field: SearchField = SearchField.all
         self._sort_by: SortBy = SortBy.year
         self._sort_order: SortOrder = SortOrder.desc
+        self._import_window: ImportWindow = ImportWindow.all
         # Persist highlight across table rebuilds (refresh, sort, return from detail/PDF).
         self._selected_doc_id: int | None = None
 
@@ -134,7 +147,7 @@ class LibraryScreen(Screen):
             id="app-header",
         )
         yield Static(
-            "  / search · Esc leave · f/Ctrl+f field · ↓ table · enter run/open · o PDF",
+            "  / search · f field · i imported · e edit · ↓ table · enter open · o PDF",
             id="action-bar",
         )
         with Horizontal(id="search-row"):
@@ -153,7 +166,7 @@ class LibraryScreen(Screen):
         self._update_field_chrome()
         self.refresh_docs()
         self.app.set_action_bar(
-            "/ search · Esc leave search · f field · ↓ results · o PDF · l lists"
+            "/ search · f field · i imported · e edit · ↓ results · o PDF · l lists"
         )
 
     def _search_input(self) -> Input:
@@ -225,6 +238,7 @@ class LibraryScreen(Screen):
         self._capture_selection()
         self._query_text = text if text else None
         db = self.app.db
+        added_from, added_to = import_window_bounds(self._import_window)
         # When searching with relevance preferred and sort is still default year,
         # auto-use relevance for text queries if user hasn't locked another mode
         sort_by = self._sort_by
@@ -237,6 +251,8 @@ class LibraryScreen(Screen):
                     search_field=self._search_field,
                     sort_by=sort_by,
                     sort_order=self._sort_order,
+                    added_from=added_from,
+                    added_to=added_to,
                     limit=200,
                 )
             )
@@ -245,7 +261,11 @@ class LibraryScreen(Screen):
             # relevance without query → added_date
             effective = sort_by if sort_by != SortBy.relevance else SortBy.added_date
             self._docs = db.list_documents(
-                limit=500, sort_by=effective, sort_order=self._sort_order
+                limit=500,
+                sort_by=effective,
+                sort_order=self._sort_order,
+                added_from=added_from,
+                added_to=added_to,
             )
 
         table = self.query_one("#docs-table", DataTable)
@@ -268,9 +288,14 @@ class LibraryScreen(Screen):
         status = self.query_one("#status-bar", Static)
         field = _FIELD_LABEL[self._search_field]
         q = f'[{field}] "{text}" · ' if text else f"[{field}] · "
+        imported = (
+            ""
+            if self._import_window == ImportWindow.all
+            else f"imported={self._import_window.value} · "
+        )
         counts = db.count_by_status()
         status.update(
-            f"{q}sort={self._sort_label()} · {len(self._docs)} shown · "
+            f"{q}{imported}sort={self._sort_label()} · {len(self._docs)} shown · "
             f"library={db.count_documents()} · "
             f"complete={counts.get('complete', 0)} "
             f"partial={counts.get('partial', 0)} "
@@ -341,6 +366,14 @@ class LibraryScreen(Screen):
         self.refresh_docs(self._query_text)
         self.notify(f"Sort: {self._sort_label()}", timeout=2)
 
+    def action_cycle_import_window(self) -> None:
+        self.app.clear_esc_quit()
+        idx = _IMPORT_CYCLE.index(self._import_window)
+        self._import_window = _IMPORT_CYCLE[(idx + 1) % len(_IMPORT_CYCLE)]
+        self.refresh_docs(self._query_text)
+        label = self._import_window.value
+        self.notify(f"Imported: {label}", timeout=2)
+
     def action_sort_year(self) -> None:
         self.app.clear_esc_quit()
         if self._sort_by == SortBy.year:
@@ -371,7 +404,8 @@ class LibraryScreen(Screen):
 
         1. Search box focused → leave box, focus results table (keep text/results)
         2. Table focused + active/draft search → clear search, show full library
-        3. Otherwise → double-Esc quit at root
+        3. Import-date window active → reset to all
+        4. Otherwise → double-Esc quit at root
         """
         inp = self._search_input()
 
@@ -389,7 +423,16 @@ class LibraryScreen(Screen):
             self._focus_table()
             return
 
-        # 3) Root: Esc Esc quit
+        # 3) Clear import-date window
+        if self._import_window != ImportWindow.all:
+            self.app.clear_esc_quit()
+            self._import_window = ImportWindow.all
+            self.refresh_docs(None)
+            self._focus_table()
+            self.notify("Imported: all", timeout=2)
+            return
+
+        # 4) Root: Esc Esc quit
         self.app.handle_root_escape()
 
     def action_refresh(self) -> None:
@@ -469,6 +512,20 @@ class LibraryScreen(Screen):
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         _ = event
         self.action_open_detail()
+
+    def action_edit_metadata(self) -> None:
+        self.app.clear_esc_quit()
+        doc = self._selected_doc()
+        if doc is None or doc.id is None:
+            self.notify("No document selected", severity="warning")
+            return
+        from symworx_elibrary.tui.screens.detail import EditMetadataModal
+
+        self.app.push_screen(EditMetadataModal(doc.id), self._after_edit)
+
+    def _after_edit(self, changed: bool | None) -> None:
+        if changed:
+            self.refresh_docs(self._query_text)
 
     def action_add_to_list(self) -> None:
         self.app.clear_esc_quit()
