@@ -7,19 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-### Changed
-
-### Security
-
-
 ## [0.2.0] - 2026-08-29
 
 ### Added
 - `elib process` default inbox sequence: `~/elibrary/tmp` then `~/elibrary/cart` (`--from tmp|cart|all`).
 - Filter by import date: `elib search --added-from/--added-to/--added-since`; TUI `i` cycles all/today/7d/30d.
 - Manual author/year edits: `elib edit --id/--doi --author --year`; TUI `e` (marks `metadata_source=manual`).
+
+## [0.1.0] - 2026-07-30
+
+### Added
+- Initial public-oriented release of elib (local-first PDF library + PubMed integration + TUI).
 - Textual TUI: library search, detail, named paper lists, PDF open (Papers / configurable viewer).
 - Metadata pipeline: PubMed primary → Crossref fallback → honest local status tracking.
 - Paper lists: create, rename, soft-delete/restore, BibTeX export (`elib list`, TUI `l` / `m`).
@@ -36,18 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prefer NCBI API key in `~/.config/elib/env` (mode 600), not in bisynced `config.yaml`.
 - Tracked secrets removed from example config; `config.yaml` gitignored.
 
-## [0.1.0] - 2026-07-30
-
-### Added
-- Initial public-oriented release of elib (local-first PDF library + PubMed integration + TUI).
-
-### Notes
-- Target first tagged release after landing the refactor branch, security scrub sign-off, and smoke test on a clean clone.
-- Branching model: `develop` / `stage` / `main` with `release/vX.Y.Z` prep branches (see [docs/RELEASING.md](docs/RELEASING.md)).
-
 ---
 
 ## Version Links
 
-[0.2.0]: https://github.com/csymd/symelib/releases/tag/v0.2.0
+[Unreleased]: https://github.com/csymd/symelib/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/csymd/symelib/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/csymd/symelib/releases/tag/v0.1.0

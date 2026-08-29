@@ -49,7 +49,7 @@ If you see something that needs fixing, feel free to open a PR directly—no nee
    source ~/.config/elib/env # if setup wrote env exports
    ```
 
-4. **Install pre-commit hooks** (once per clone; no GitHub Actions yet):
+4. **Install pre-commit hooks** (once per clone):
 
    ```bash
    make pre-commit-install   # ruff format + lint on each git commit
