@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter by import date: `elib search --added-from/--added-to/--added-since`; TUI `i` cycles all/today/7d/30d.
 - Manual author/year edits: `elib edit --id/--doi --author --year`; TUI `e` (marks `metadata_source=manual`).
 
+### Changed
+- CI matches the family cadence: `ci.yml` on `develop` only; `release.yml` on PRs to `main`, `release/**`, and tags `v*` (GitHub Release on tags; PyPI paused).
+
 ## [0.1.0] - 2026-07-30
 
 ### Added
