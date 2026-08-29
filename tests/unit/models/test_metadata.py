@@ -2,22 +2,25 @@
 tests/unit/models/test_metadata.py
 """
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from pydantic import ValidationError
 import pytest
 
 from symworx_elibrary.models.metadata import (
     DocumentMetadata,
+    ImportWindow,
     MetadataSource,
     MetadataStatus,
     SearchQuery,
     SearchResult,
     SortBy,
     SortOrder,
+    added_date_sql_filter,
     classify_metadata_status,
     has_real_doi,
     has_real_pmid,
+    import_window_bounds,
     is_synthetic_doi,
     is_synthetic_pmid,
 )
@@ -162,6 +165,8 @@ def test_search_query_defaults():
     assert query.author is None
     assert query.year_from is None
     assert query.year_to is None
+    assert query.added_from is None
+    assert query.added_to is None
     assert query.keywords == []
     assert query.doi is None
     assert query.pmid is None
@@ -176,6 +181,42 @@ def test_search_query_defaults():
 def test_search_query_validation_error():
     with pytest.raises(ValidationError):
         SearchQuery(limit=2000)  # Limit exceeds the maximum allowed value
+
+
+def test_search_query_added_range_order():
+    with pytest.raises(ValidationError):
+        SearchQuery(added_from=date(2026, 8, 10), added_to=date(2026, 8, 1))
+
+
+def test_import_window_bounds_today():
+    today = date(2026, 8, 28)
+    assert import_window_bounds(ImportWindow.today, today=today) == (today, today)
+    assert import_window_bounds("today", today=today) == (today, today)
+
+
+def test_import_window_bounds_rolling():
+    today = date(2026, 8, 28)
+    assert import_window_bounds(ImportWindow.days_7, today=today) == (
+        today - timedelta(days=6),
+        today,
+    )
+    assert import_window_bounds(ImportWindow.days_30, today=today) == (
+        today - timedelta(days=29),
+        today,
+    )
+    assert import_window_bounds(ImportWindow.all, today=today) == (None, None)
+    assert import_window_bounds("nope", today=today) == (None, None)
+
+
+def test_added_date_sql_filter_empty_and_bounds():
+    sql, params = added_date_sql_filter(None, None)
+    assert sql == ""
+    assert params == []
+
+    sql, params = added_date_sql_filter(date(2026, 8, 1), date(2026, 8, 28))
+    assert "date(d.added_date, 'localtime') >= date(?)" in sql
+    assert "date(d.added_date, 'localtime') <= date(?)" in sql
+    assert params == ["2026-08-01", "2026-08-28"]
 
 
 # Test for SearchResult model

@@ -4,11 +4,18 @@ The elib <search> command implementation, with access to local and PubMed databa
 
 from __future__ import annotations
 
+from datetime import date
 from enum import Enum
 
 import typer
 
-from symworx_elibrary.models.metadata import SearchField, SearchQuery, SortBy, SortOrder
+from symworx_elibrary.models.metadata import (
+    SearchField,
+    SearchQuery,
+    SortBy,
+    SortOrder,
+    import_window_bounds,
+)
 from symworx_elibrary.services.db_manager import DatabaseManager
 from symworx_elibrary.services.ncbi_client import NCBIClient
 
@@ -23,10 +30,28 @@ class SearchSource(str, Enum):
     BOTH = "both"
 
 
+class AddedSince(str, Enum):
+    """Relative import windows for ``--added-since`` (no ``all``; omit the flag)."""
+
+    today = "today"
+    days_7 = "7d"
+    days_30 = "30d"
+
+
 class ExportFormat(str, Enum):
     JSON = "json"
     CSV = "csv"
     XML = "xml"
+
+
+def _parse_iso_date(value: str | None) -> date | None:
+    """Parse YYYY-MM-DD for Typer (datetime.date is not a supported option type)."""
+    if value is None or value == "":
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise typer.BadParameter(f"Invalid date {value!r}; use YYYY-MM-DD") from exc
 
 
 # ========================================================= #
@@ -49,6 +74,21 @@ def search(
     ),
     year_from: int = typer.Option(None, help="Filter by publication year (start)."),
     year_to: int = typer.Option(None, help="Filter by publication year (end)."),
+    added_from: str | None = typer.Option(
+        None,
+        "--added-from",
+        help="Imported on or after this date (YYYY-MM-DD).",
+    ),
+    added_to: str | None = typer.Option(
+        None,
+        "--added-to",
+        help="Imported on or before this date (YYYY-MM-DD).",
+    ),
+    added_since: AddedSince | None = typer.Option(
+        None,
+        "--added-since",
+        help="Relative import window: today | 7d | 30d (sets --added-from/--added-to).",
+    ),
     journal: str = typer.Option(None, help="Filter by journal."),
     doi: str = typer.Option(None, help="Filter by DOI."),
     pmid: str = typer.Option(None, help="Filter by PMID."),
@@ -90,6 +130,8 @@ def search(
         elib search Smith --field author
         elib search --sort-by year --sort-order desc
         elib search --sort-by author
+        elib search --added-since 7d
+        elib search --added-from 2026-08-01 --added-to 2026-08-28
         elib search "heart rate" --source pubmed
     """
     config = ctx.obj["config"]
@@ -104,6 +146,14 @@ def search(
     if source in ["local", "both"]:
         db_manager = DatabaseManager(config.database_path)
 
+        since_from, since_to = (None, None)
+        if added_since is not None:
+            since_from, since_to = import_window_bounds(added_since.value)
+        parsed_from = _parse_iso_date(added_from)
+        parsed_to = _parse_iso_date(added_to)
+        if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+            typer.echo("Error: --added-from must be on or before --added-to", err=True)
+            raise typer.Exit(code=1)
         query = SearchQuery(
             text=text,
             author=author,
@@ -116,6 +166,8 @@ def search(
             search_field=field,
             sort_by=sort_by,
             sort_order=sort_order,
+            added_from=since_from if since_from is not None else parsed_from,
+            added_to=since_to if since_to is not None else parsed_to,
             limit=limit,
             offset=offset,
         )
@@ -171,6 +223,8 @@ def _display_text_results(local_results, pubmed_results, source):
             typer.echo(f"   Journal: {m.journal} ({m.publication_year})")
             typer.echo(f"   DOI: {m.doi}  PMID: {m.pmid or '-'}")
             typer.echo(f"   📄 File: {m.filename}")
+            if m.added_date:
+                typer.echo(f"   Imported: {m.added_date.date().isoformat()}")
             typer.echo("")
 
     if source in ["pubmed", "both"] and pubmed_results:
@@ -226,6 +280,7 @@ def _display_json_results(local_results, pubmed_results, source):
                 "pmid": m.pmid,
                 "filename": m.filename,
                 "file_path": m.file_path,
+                "added_date": m.added_date.isoformat() if m.added_date else None,
                 "in_library": True,
             }
         )

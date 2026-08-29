@@ -64,6 +64,7 @@ class SchemaMixin:
                 "CREATE INDEX IF NOT EXISTS idx_metadata_issue ON documents(metadata_issue)"
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_source_path ON documents(source_path)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_added_date ON documents(added_date)")
             # Unique DOI only when a real (non-empty) value is present.
             conn.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_documents_doi_unique

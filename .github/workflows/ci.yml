@@ -1,22 +1,38 @@
+# Day-to-day CI.
+#
+# Branch model (same as SymWorx / SymKit / SymSight):
+#   develop → stage → release/vX.Y.Z → main → manual tag vX.Y.Z
+#
+# Day-to-day CI on develop only. stage/main are promotions of that SHA.
+# Tag / release.yml re-runs the full gate (and creates the GitHub Release).
+# workflow_dispatch re-runs this gate on a branch (checks only; no publish).
+#
+# Job ids match develop required checks (no `name:` so GitHub reports
+# fmt / check).
+
 name: CI
 
 on:
   push:
-    branches: [develop, main, stage, "release/**"]
+    branches: [develop]
   pull_request:
-    branches: [develop, main, stage]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  lint:
-    name: Ruff
+  fmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -32,14 +48,12 @@ jobs:
       - name: Ruff format check
         run: uv run --group dev ruff format --check .
 
-      - name: Ruff lint
-        run: uv run --group dev ruff check .
-
-  test:
-    name: Pytest
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -52,5 +66,8 @@ jobs:
       - name: Sync project + dev
         run: uv sync --group dev
 
-      - name: Run tests
+      - name: Ruff lint
+        run: uv run --group dev ruff check .
+
+      - name: Pytest
         run: uv run --group dev pytest

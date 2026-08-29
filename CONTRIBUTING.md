@@ -49,7 +49,7 @@ If you see something that needs fixing, feel free to open a PR directly—no nee
    source ~/.config/elib/env # if setup wrote env exports
    ```
 
-4. **Install pre-commit hooks** (once per clone; no GitHub Actions yet):
+4. **Install pre-commit hooks** (once per clone):
 
    ```bash
    make pre-commit-install   # ruff format + lint on each git commit
@@ -67,12 +67,16 @@ If you see something that needs fixing, feel free to open a PR directly—no nee
    make test
    ```
 
-7. **Commit** with clear, descriptive messages; push and open a Pull Request.
+7. **Commit** with clear, descriptive messages; push and open a Pull Request to **`develop`**.
+
+   GitHub Actions `CI` runs on `develop` (jobs `fmt` and `check`). Release
+   validation (`release.yml`) runs on PRs into `main`, pushes to `release/**`,
+   and tags `v*`. See [docs/RELEASING.md](docs/RELEASING.md).
 
    Hooks auto-fix formatting when possible; re-stage and commit again if they modify files.
    Emergency skip (rare): `git commit --no-verify`.
 
-Runtime layout for day-to-day use (cart → library → SQLite) is documented in [QUICKSTART.md](QUICKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
+Runtime layout for day-to-day use (tmp then cart → library → SQLite) is documented in [QUICKSTART.md](QUICKSTART.md). Core flows do **not** require Postgres; `make db-up` is only for the optional agents/RAG path.
 
 ## Project layout (where to work)
 

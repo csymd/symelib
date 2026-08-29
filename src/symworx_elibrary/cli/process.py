@@ -4,7 +4,9 @@ The elib <process> command to process PDFs into the library.
 
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
@@ -14,24 +16,71 @@ from symworx_elibrary.services.ncbi_client import NCBIClient
 from symworx_elibrary.services.pdf_processor import PDFProcessor
 from symworx_elibrary.utils.rate_limiter import configure_process_delay
 
+if TYPE_CHECKING:
+    from symworx_elibrary.utils.config import Config
+
 # ========================================================= #
 # elib <process> command                                    #
 # ========================================================= #
 
 
+class ProcessFrom(str, Enum):
+    """Configured inboxes when no explicit path is given."""
+
+    tmp = "tmp"
+    cart = "cart"
+    all = "all"
+
+
+def resolve_process_sources(
+    *,
+    config: Config,
+    source_dir: Path | None = None,
+    from_inbox: ProcessFrom = ProcessFrom.all,
+) -> list[Path]:
+    """Ordered unique ingest directories (tmp before cart for ``all``).
+
+    An explicit ``source_dir`` is the only source (``--from`` is ignored).
+    Missing directories are still returned; the command skips them later.
+    """
+    if source_dir is not None:
+        return [Path(source_dir).expanduser()]
+
+    ordered: list[Path] = []
+    if from_inbox in (ProcessFrom.tmp, ProcessFrom.all):
+        ordered.append(Path(config.temp_directory).expanduser())
+    if from_inbox in (ProcessFrom.cart, ProcessFrom.all):
+        ordered.append(Path(config.cart_directory).expanduser())
+
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for path in ordered:
+        key = str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(path)
+    return unique
+
+
 def process(
     source_dir: Path | None = typer.Argument(
         None,
-        help="Directory containing PDFs to process "
-        "(default: cart_directory from config, usually ~/elibrary/cart)",
+        help="Directory containing PDFs to process. Default: tmp then cart (see --from).",
     ),
     target_dir: Path | None = typer.Option(
         None, help="Target directory for processed files (default: ~/elibrary/library)"
     ),
+    from_inbox: ProcessFrom = typer.Option(
+        ProcessFrom.all,
+        "--from",
+        help="When no path is given: tmp, cart, or all (tmp then cart). "
+        "Ignored if a path is passed.",
+    ),
     limit: int | None = typer.Option(
         None,
         "--limit",
-        help="Process at most N PDFs (useful for large cart/ folders).",
+        help="Process at most N PDFs across the inbox sequence (tmp first, then cart).",
     ),
     delay: float | None = typer.Option(
         None,
@@ -47,28 +96,50 @@ def process(
     """
     Process PDFs into the library (metadata + copy into target_directory).
 
-    Defaults to your AWS-synced cart inbox:
+    Default inbox sequence (when no path is given) is tmp then cart:
 
-        elib process                  # ~/elibrary/cart → ~/elibrary/library
-        elib process --limit 20       # first 20 PDFs only
+        elib process                  # ~/elibrary/tmp then ~/elibrary/cart
+        elib process --from tmp       # ~/elibrary/tmp only
+        elib process --from cart      # ~/elibrary/cart only
+        elib process --limit 20       # first 20 PDFs across that sequence
         elib process --delay 1.0      # slower, fewer 429s
         elib process /path/to/pdfs
 
+    Already-imported source files are skipped (matched on source_path / DOI).
     NCBI rate limits: ~3 req/s without API key, ~10/s with key. A 429 triggers
     automatic backoff; prefer setting ncbi_api_key in config.yaml if you have one.
     """
     config = ctx.obj["config"]
     logger = ctx.obj["logger"]
 
-    src = source_dir if source_dir is not None else Path(config.cart_directory)
-    src = src.expanduser()
-    if not src.exists():
-        typer.echo(f"Source directory does not exist: {src}", err=True)
+    sources = resolve_process_sources(
+        config=config,
+        source_dir=source_dir,
+        from_inbox=from_inbox,
+    )
+    existing = [path for path in sources if path.exists()]
+    missing = [path for path in sources if not path.exists()]
+
+    if source_dir is not None and not existing:
+        typer.echo(f"Source directory does not exist: {sources[0]}", err=True)
         typer.echo(
-            "Set cart_directory in ~/elibrary/config.yaml or pass a path explicitly.",
+            "Set temp_directory / cart_directory in ~/elibrary/config.yaml "
+            "or pass a path explicitly.",
             err=True,
         )
         raise typer.Exit(code=1)
+
+    if not existing:
+        typer.echo("No ingest directories found.", err=True)
+        typer.echo(
+            "Create ~/elibrary/tmp or ~/elibrary/cart, set paths in config.yaml, "
+            "or pass a path explicitly.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    for path in missing:
+        typer.echo(f"Skipping missing directory: {path}")
 
     target_path = (target_dir if target_dir else config.target_directory).expanduser()
 
@@ -94,25 +165,32 @@ def process(
         target_directory=target_path,
     )
 
-    typer.echo(f"Source (cart/inbox): {src}")
-    typer.echo(f"Target (library):    {target_path}")
-    typer.echo(f"Database:            {config.database_path}")
-    logger.info(f"Processing PDFs from: {src}")
+    sequence = " → ".join(str(path) for path in existing)
+    typer.echo(f"Source (inbox sequence): {sequence}")
+    typer.echo(f"Target (library):        {target_path}")
+    typer.echo(f"Database:                {config.database_path}")
+    logger.info(f"Processing PDFs from: {sequence}")
+
+    docs = []
+    for src in existing:
+        found = pdf_processor.scan_directory(src)
+        typer.echo(f"  {src}: {len(found)} PDF(s)")
+        docs.extend(found)
 
     if limit is not None:
-        # Temporary: scan then process only first N
-        docs = pdf_processor.scan_directory(src)[:limit]
-        processed = []
-        errors = []
-        for doc in docs:
-            try:
-                result = file_manager.process_single_document(doc)
-                if result:
-                    processed.append(result)
-            except Exception as e:
-                errors.append(f"{doc.file_path}: {e!s}")
-    else:
-        processed, errors = file_manager.process_directory(src)
+        docs = docs[:limit]
+        typer.echo(f"Limit: processing first {len(docs)} PDF(s)")
+
+    processed = []
+    errors = []
+    for doc in docs:
+        try:
+            result = file_manager.process_single_document(doc)
+            if result:
+                processed.append(result)
+        except Exception as e:
+            errors.append(f"{doc.file_path}: {e!s}")
+            logger.error("process failed", path=str(doc.file_path), error=str(e))
 
     typer.echo(f"\nProcessed {len(processed)} documents successfully")
     logger.info(f"Processed {len(processed)} documents successfully")

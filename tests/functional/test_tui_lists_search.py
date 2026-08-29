@@ -12,12 +12,13 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from textual.widgets import Input
 
 from symworx_elibrary.models.metadata import MetadataSource, MetadataStatus
 from symworx_elibrary.models.reference import Author, Journal, Reference
 from symworx_elibrary.services.db_manager import DatabaseManager
 from symworx_elibrary.tui.app import ElibApp
-from symworx_elibrary.tui.screens.detail import DetailScreen
+from symworx_elibrary.tui.screens.detail import DetailScreen, EditMetadataModal
 from symworx_elibrary.tui.screens.library import LibraryScreen
 from symworx_elibrary.tui.screens.lists import ListDetailScreen, ListsScreen
 from symworx_elibrary.utils.config import Config
@@ -150,6 +151,90 @@ def test_search_prefix_in_library_tui(tui_env):
             # Static content may be str or Visual
             content = getattr(title_widget, "_content", None) or str(title_widget.render())
             assert "Cardiovascular" in str(content)
+
+    _run(body())
+
+
+def test_tui_import_window_filters_by_added_date(tui_env):
+    """i cycles import windows; today/7d/30d hide older rows."""
+    db = tui_env["db"]
+    pdf = tui_env["pdf"].parent / "old.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    old_id = db.add_document(
+        Reference(
+            pmid="11111111",
+            doi="10.1234/old.paper",
+            title="An old imported paper",
+            authors=[Author(last_name="Old", first_name="Pat", initials="P")],
+            journal=Journal(title="Nature"),
+            publication_date=date(2018, 1, 1),
+            abstract="Old abstract.",
+            keywords=[],
+            mesh_terms=[],
+        ),
+        file_path=pdf,
+        filename=pdf.name,
+        file_size=pdf.stat().st_size,
+        metadata_status=MetadataStatus.complete,
+        metadata_source=MetadataSource.pubmed,
+    )
+    with db.get_connection() as conn:
+        conn.execute(
+            "UPDATE documents SET added_date = ? WHERE id = ?",
+            ("2020-01-15 12:00:00", old_id),
+        )
+        conn.commit()
+
+    async def body():
+        app = ElibApp(db_path=tui_env["db_path"], config=tui_env["config"])
+        async with app.run_test(size=(120, 40)) as pilot:
+            assert isinstance(app.screen, LibraryScreen)
+            table = app.screen.query_one("#docs-table")
+            assert table.row_count == 2
+            assert app.screen._import_window.value == "all"
+
+            await pilot.press("i")  # today
+            await pilot.pause()
+            assert app.screen._import_window.value == "today"
+            assert table.row_count == 1
+
+            await pilot.press("i")  # 7d
+            await pilot.pause()
+            assert app.screen._import_window.value == "7d"
+            assert table.row_count == 1
+
+            await pilot.press("escape")  # clear import window
+            await pilot.pause()
+            assert app.screen._import_window.value == "all"
+            assert table.row_count == 2
+
+    _run(body())
+
+
+def test_tui_edit_authors_and_year(tui_env):
+    """e opens the edit modal; saving updates authors and year on the record."""
+
+    async def body():
+        app = ElibApp(db_path=tui_env["db_path"], config=tui_env["config"])
+        async with app.run_test(size=(120, 40)) as pilot:
+            assert isinstance(app.screen, LibraryScreen)
+            await pilot.press("e")
+            await pilot.pause()
+            assert isinstance(app.screen, EditMetadataModal)
+            authors_in = app.screen.query_one("#edit-authors-input", Input)
+            year_in = app.screen.query_one("#edit-year-input", Input)
+            authors_in.value = "Curie, Marie"
+            year_in.value = "1898"
+            app.screen._save()
+            await pilot.pause()
+            assert isinstance(app.screen, LibraryScreen)
+            meta = tui_env["db"].get_by_id(tui_env["doc_id"])
+            assert meta is not None
+            assert meta.publication_year == 1898
+            assert "Curie" in meta.authors_json
+            assert meta.metadata_source.value == "manual"
+            table = app.screen.query_one("#docs-table")
+            assert table.row_count >= 1
 
     _run(body())
 

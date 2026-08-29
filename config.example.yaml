@@ -6,12 +6,12 @@
 # Then run:  elib setup   # creates dirs + env file
 #
 # Layout under $ELIB_HOME (default ~/elibrary):
-#   cart/      raw / inbox PDFs
+#   tmp/       ad-hoc PDF inbox (processed first by `elib process`)
+#   cart/      synced / bulk PDF inbox (processed after tmp)
 #   library/   processed PDFs
 #   texts/     books / other materials
 #   data/      elib.db (SQLite)
 #   exports/   BibTeX exports
-#   tmp/       scratch / temporary files
 
 ncbi_email: you@example.com
 # Optional — higher NCBI rate limits (~10/s). Prefer env over committing:

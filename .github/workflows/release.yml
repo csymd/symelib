@@ -1,0 +1,237 @@
+# Release validation + GitHub Release (see docs/RELEASING.md).
+#
+# Branch model (same as SymWorx / SymKit / SymSight):
+#   develop → stage → release/vX.Y.Z → main → manual tag vX.Y.Z
+#
+# Validation (meta, fmt, check, sdist/wheel smoke) runs on:
+#   - PRs into main
+#   - pushes to release/**
+#   - tags v*
+#   - workflow_dispatch (checks only; does not publish)
+#
+# Push to main is not a trigger: the PR into main already ran this workflow.
+#
+# GitHub Release runs only on tags v*, after validation succeeds. Create
+# tags manually after merging release/* → main. PyPI publish stays paused.
+
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - "release/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release-meta:
+    name: Release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      is_tag: ${{ steps.meta.outputs.is_tag }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_VERSION=$(
+            python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          print(data["project"]["version"])
+          PY
+          )
+          if [[ -z "${PKG_VERSION}" ]]; then
+            echo "::error::Could not read [project].version from pyproject.toml"
+            exit 1
+          fi
+          echo "package_version=${PKG_VERSION}"
+
+          IS_TAG=false
+          IS_PRERELEASE=false
+          TAG_VERSION=""
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            IS_TAG=true
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            if [[ "${TAG_VERSION}" == *-* ]]; then
+              IS_PRERELEASE=true
+            fi
+          fi
+
+          BRANCH_REF="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          if [[ "${BRANCH_REF}" == release/* ]]; then
+            BRANCH_VERSION="${BRANCH_REF#release/}"
+            BRANCH_VERSION="${BRANCH_VERSION#v}"
+            if [[ "${BRANCH_VERSION}" != "${PKG_VERSION}" ]]; then
+              echo "::error::release branch '${BRANCH_REF}' version (${BRANCH_VERSION}) does not match pyproject.toml version (${PKG_VERSION})"
+              exit 1
+            fi
+          fi
+
+          if [[ "${IS_TAG}" == "true" ]]; then
+            if [[ "${TAG_VERSION}" != "${PKG_VERSION}" ]]; then
+              echo "::error::Tag v${TAG_VERSION} does not match pyproject.toml version ${PKG_VERSION}"
+              exit 1
+            fi
+            if [[ "${IS_PRERELEASE}" != "true" ]]; then
+              git fetch --no-tags origin main:refs/remotes/origin/main 2>/dev/null || true
+              if git rev-parse --verify origin/main >/dev/null 2>&1; then
+                if git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+                  echo "Tag commit is on main (or an ancestor of main)."
+                else
+                  echo "::warning::Tag v${TAG_VERSION} is not an ancestor of main. Final releases should be cut after merging release/* → main."
+                fi
+              else
+                echo "::warning::Branch 'main' does not exist yet; skipping main-ancestor check for tag v${TAG_VERSION}."
+              fi
+            fi
+          fi
+
+          if [[ "${IS_TAG}" == "true" || "${BRANCH_REF}" == release/* ]]; then
+            if ! grep -Eq "^## \[${PKG_VERSION}\]" CHANGELOG.md; then
+              echo "::error::CHANGELOG.md missing '## [${PKG_VERSION}]' section for this release"
+              exit 1
+            fi
+          fi
+
+          {
+            echo "version=${PKG_VERSION}"
+            echo "is_tag=${IS_TAG}"
+            echo "is_prerelease=${IS_PRERELEASE}"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "Release metadata: version=${PKG_VERSION} is_tag=${IS_TAG} is_prerelease=${IS_PRERELEASE}"
+          if [[ "${IS_TAG}" == "true" ]]; then
+            echo "Tag push: GitHub Release will run after validation succeeds."
+          else
+            echo "Branch/PR: validation only (GitHub Release runs on tags v* only)."
+          fi
+
+  fmt:
+    runs-on: ubuntu-latest
+    needs: release-meta
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Sync dev tools
+        run: uv sync --group dev --no-install-project
+
+      - name: Ruff format check
+        run: uv run --group dev ruff format --check .
+
+  check:
+    runs-on: ubuntu-latest
+    needs: release-meta
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Sync project + dev
+        run: uv sync --group dev
+
+      - name: Ruff lint
+        run: uv run --group dev ruff check .
+
+      - name: Pytest
+        run: uv run --group dev pytest
+
+  build:
+    runs-on: ubuntu-latest
+    needs: release-meta
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Build sdist + wheel (smoke, no upload)
+        run: |
+          set -euo pipefail
+          uv build
+          ls -la dist/
+
+  release-ready:
+    name: Release checks passed
+    runs-on: ubuntu-latest
+    needs: [release-meta, fmt, check, build]
+    if: always()
+    steps:
+      - name: Require all validation jobs
+        run: |
+          set -euo pipefail
+          echo "release-meta: ${{ needs.release-meta.result }}"
+          echo "fmt: ${{ needs.fmt.result }}"
+          echo "check: ${{ needs.check.result }}"
+          echo "build: ${{ needs.build.result }}"
+          test "${{ needs.release-meta.result }}" = "success"
+          test "${{ needs.fmt.result }}" = "success"
+          test "${{ needs.check.result }}" = "success"
+          test "${{ needs.build.result }}" = "success"
+          echo "All release validation jobs passed for v${{ needs.release-meta.outputs.version }}"
+          echo "On tag pushes: github-release runs next (PyPI paused)."
+
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: [release-meta, release-ready]
+    if: needs.release-meta.outputs.is_tag == 'true' && needs.release-ready.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.release-meta.outputs.version }}
+          name: v${{ needs.release-meta.outputs.version }}
+          prerelease: ${{ needs.release-meta.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true

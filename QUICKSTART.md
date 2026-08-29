@@ -16,10 +16,15 @@ uv sync
 # or everything: uv sync --all-extras
 
 # 3. Process some PDFs (uses SQLite + your config.yaml)
-elib process /path/to/some/pdfs
+# Default: ~/elibrary/tmp then ~/elibrary/cart. Drop files in tmp for ad-hoc ingest.
+elib process --from tmp
+# or: elib process /path/to/some/pdfs
 
 # 4. Search your local library
 elib search "CRISPR oncology"
+elib search --added-since 7d          # imported in the last 7 days
+# elib search --added-from 2026-08-01 --added-to 2026-08-28
+# elib edit --id 42 --author "Smith, Ada" --year 2021
 
 # 5. Metadata quality + re-enrich incomplete rows
 elib check-metadata
@@ -32,7 +37,7 @@ elib list create "my-project" -d "Working bibliography"
 
 # 7. Interactive TUI
 elib tui
-# Keys: / search · enter open abstract · a add-to-list · l lists · e export · q quit
+# Keys: / search · i imported · e edit authors/year · enter open · a add-to-list · l lists · q quit
 
 # 8. Rebuild the full-text search index after bulk changes
 elib rebuild-index

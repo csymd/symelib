@@ -137,11 +137,10 @@ git push origin main
 git push origin vX.Y.Z
 ```
 
-### 5. GitHub Release (manual is fine for v0.1)
+### 5. GitHub Release
 
-- Create a GitHub Release from tag `vX.Y.Z`.
-- Paste the `CHANGELOG.md` section for that version.
-- Mark as pre-release if using beta/rc tags.
+`release.yml` creates the GitHub Release from tag `vX.Y.Z` after validation
+succeeds (pre-release if the version contains `-`). PyPI stays paused.
 
 ### 6. Back-merge (keep history linear-ish)
 
@@ -176,21 +175,29 @@ GitHub Release → mark **Pre-release**.
 
 ---
 
-## CI (when you enable Actions)
+## CI
 
-SymWorx splits **day-to-day CI** vs **release gates**. For elib (no Actions required for first tag):
+Same split as SymWorx / SymKit / SymSight:
 
 | Workflow | Trigger | Checks |
 |----------|---------|--------|
-| `ci.yml` | PR / push `develop`, `main`, `stage`, `release/**` | `ruff format --check`, `ruff check`, `pytest` |
-| `release.yml` (later) | PR → `main`, `release/**`, tags `v*` | Version ↔ tag/branch match; changelog section; full test matrix |
+| `ci.yml` | PR / push `develop`; `workflow_dispatch` | `fmt` (ruff format), `check` (ruff lint + pytest) |
+| `release.yml` | PR → `main`; push `release/**`; tags `v*`; `workflow_dispatch` | Version ↔ tag/branch match; changelog heading; `fmt`; `check`; `uv build` smoke. GitHub Release on tags only. |
 
-**Publish jobs stay disabled** until you want PyPI / automated GitHub Releases.
+Push to `main` is not a CI/release trigger: the PR into `main` already ran `release.yml`. `stage` / `main` are promotions of a SHA already gated on `develop` or the release PR.
+
+**PyPI publish stays paused.** GitHub Release runs on tags `v*` after validation.
 
 Local equivalent:
 
 ```bash
 make check   # ruff check + format --check + pytest
+```
+
+Repository rulesets (PR required on `develop` / `stage` / `main` / `release/**`, no force-push, `v*` tags immutable except org-admin bypass):
+
+```bash
+./scripts/apply-github-rulesets.py
 ```
 
 ---
@@ -238,8 +245,7 @@ Not required for GitHub releases. When ready:
 - [ ] `make check` green
 - [ ] No secrets / personal `config.yaml` / PDFs in the commit
 - [ ] Smoke: setup → process → search → TUI open PDF → list export
-- [ ] Tag `vX.Y.Z` on `main` after merge
-- [ ] GitHub Release notes pasted from changelog
+- [ ] Tag `vX.Y.Z` on `main` after merge (`release.yml` creates the GitHub Release)
 - [ ] `develop` (and `stage`) back-merged
 
 ---

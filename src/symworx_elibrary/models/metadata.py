@@ -2,10 +2,10 @@
 Metadata handling
 """
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # ========================================================= #
 # Document Metadata Models                                  #
@@ -131,7 +131,7 @@ class DocumentMetadata(BaseModel):
     metadata_issue: MetadataIssue = MetadataIssue.unknown
     metadata_detail: str | None = None
     text_extract_chars: int | None = None
-    source_path: str | None = None  # original cart/inbox path (dedup + reprocess)
+    source_path: str | None = None  # original inbox path (tmp/cart; dedup + reprocess)
     original_filename: str | None = None
 
     class Config:
@@ -187,6 +187,63 @@ class SortOrder(str, Enum):
     desc = "desc"
 
 
+class ImportWindow(str, Enum):
+    """Relative window on documents.added_date (when the file was ingested)."""
+
+    all = "all"
+    today = "today"
+    days_7 = "7d"
+    days_30 = "30d"
+
+
+def import_window_bounds(
+    window: ImportWindow | str,
+    *,
+    today: date | None = None,
+) -> tuple[date | None, date | None]:
+    """Inclusive [from, to] calendar dates for an import-time window.
+
+    ``all`` → ``(None, None)`` (no filter). Unknown values are treated as ``all``.
+    """
+    if isinstance(window, str):
+        try:
+            window = ImportWindow(window)
+        except ValueError:
+            return None, None
+    day = today or date.today()
+    if window == ImportWindow.today:
+        return day, day
+    if window == ImportWindow.days_7:
+        return day - timedelta(days=6), day
+    if window == ImportWindow.days_30:
+        return day - timedelta(days=29), day
+    return None, None
+
+
+def added_date_sql_filter(
+    added_from: date | None,
+    added_to: date | None,
+) -> tuple[str, list[str]]:
+    """AND clauses + ISO date params for an inclusive import-date range.
+
+    Compares ``date(d.added_date, 'localtime')`` so SQLite UTC
+    ``CURRENT_TIMESTAMP`` values line up with local calendar days (the same
+    clock ``date.today()`` uses). Empty string / no params when neither bound
+    is set. Callers must already have a WHERE clause (or ``WHERE 1=1``).
+    """
+    clauses: list[str] = []
+    params: list[str] = []
+    if added_from is not None:
+        clauses.append("date(d.added_date, 'localtime') >= date(?)")
+        params.append(added_from.isoformat())
+    if added_to is not None:
+        clauses.append("date(d.added_date, 'localtime') <= date(?)")
+        params.append(added_to.isoformat())
+    if not clauses:
+        return "", []
+    return " AND " + " AND ".join(clauses), params
+
+
 def sort_sql_clause(sort_by: SortBy, sort_order: SortOrder, *, use_fts: bool = False) -> str:
     """Build a safe ORDER BY clause (enum-only; never interpolates user text)."""
     order = "ASC" if sort_order == SortOrder.asc else "DESC"
@@ -234,12 +291,25 @@ class SearchQuery(BaseModel):
     pmid: str | None = None
     journal: str | None = None
     metadata_status: MetadataStatus | None = None
+    # Inclusive calendar-day bounds on documents.added_date (ingest time)
+    added_from: date | None = None
+    added_to: date | None = None
     # Where free-text ``text`` is applied (title/keywords/author/abstract/all)
     search_field: SearchField = SearchField.all
     sort_by: SortBy = SortBy.relevance
     sort_order: SortOrder = SortOrder.desc
     limit: int = Field(default=50, ge=1, le=1000)
     offset: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _added_range_order(self):
+        if (
+            self.added_from is not None
+            and self.added_to is not None
+            and self.added_from > self.added_to
+        ):
+            raise ValueError("added_from must be on or before added_to")
+        return self
 
 
 class SearchResult(BaseModel):
